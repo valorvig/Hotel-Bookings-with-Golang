@@ -1,0 +1,22 @@
+.my-footer {
+  height: 5em;
+  background: #0c699e;
+  margin-top: 1.5em; /*the width of a capital letter M, 1em = base size of a chracter*/
+  padding: 1em;
+  color: #ffffff;
+  font-size: 80%; /*percent of the web content's base font*/
+}
+
+.room-image {
+  max-width: 50%; /*50% of the available space*/
+}
+
+/*override notie's styles by removing the box's shadow*/
+.notie-container {
+  box-shadow: none;
+}
+
+.datepicker {
+  /* An element with greater stack order is always in front of an element with a lower stack order. */
+  z-index: 10000; /*let the element stay infront of other elements, closer to the screen*/
+}
