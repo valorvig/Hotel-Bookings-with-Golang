@@ -8,8 +8,9 @@ import (
 	"net/http"
 	"path/filepath"
 
-	"github.com/valorvig/bookings/pkg/config"
-	"github.com/valorvig/bookings/pkg/models"
+	"github.com/justinas/nosurf"
+	"github.com/valorvig/bookings/internal/config"
+	"github.com/valorvig/bookings/internal/models"
 )
 
 // map any functions and parse them to the tempalte
@@ -23,14 +24,14 @@ func NewTemplates(a *config.AppConfig) {
 }
 
 // AddDefaultData allows what data to be available on every page
-func AddDefaultData(td *models.TemplateData) *models.TemplateData {
-
+func AddDefaultData(td *models.TemplateData, r *http.Request) *models.TemplateData {
+	td.CSRFToken = nosurf.Token(r)
 	return td
 }
 
 // RenderTemplate renders templates using html/template
-// Capitalize the name sothat it can be exported
-func RenderTemplate(w http.ResponseWriter, tmpl string, td *models.TemplateData) {
+// (Capitalize the name sothat it can be exported)
+func RenderTemplate(w http.ResponseWriter, r *http.Request, tmpl string, td *models.TemplateData) {
 	// create a variable to hold template cache
 	var tc map[string]*template.Template
 
@@ -53,7 +54,7 @@ func RenderTemplate(w http.ResponseWriter, tmpl string, td *models.TemplateData)
 
 	buf := new(bytes.Buffer)
 
-	td = AddDefaultData(td)
+	td = AddDefaultData(td, r)
 
 	// store the value in buf and don't pass any data (nil)
 	_ = t.Execute(buf, td)
@@ -88,12 +89,14 @@ func CreateTemplateCache() (map[string]*template.Template, error) {
 		// Home --> &{<nil> 0xc0000205c0 0xc00013c200 0xc00004e1e0}
 		// About --> &{<nil> 0xc00008a180 0xc0000a6100 0xc0000ce000}
 		if err != nil {
+			// fmt.Println("ERROR: ts, err := template.New(name).Funcs(functions).ParseFiles(page)")
 			return myCache, err
 		}
 
 		matches, err := filepath.Glob("./templates/*.layout.tmpl")
 		// fmt.Println("matches: ", matches) // [templates\base.layout.tmpl]
 		if err != nil {
+			// fmt.Println("ERROR:	matches, err := filepath.Glob(\"./templates/*.layout.tmpl\")")
 			return myCache, err
 		}
 
@@ -103,6 +106,7 @@ func CreateTemplateCache() (map[string]*template.Template, error) {
 			// Home --> &{<nil> 0xc0000205c0 0xc00013c200 0xc00004e1e0}
 			// About --> &{<nil> 0xc00008a180 0xc0000a6100 0xc0000ce000}
 			if err != nil {
+				// fmt.Println("ERROR: ts, err = ts.ParseGlob(\"./templates/*.layout.tmpl\")")
 				return myCache, err
 			}
 		}

@@ -24,7 +24,7 @@ func NoSurf(next http.Handler) http.Handler {
 	// Create NoSurf token
 	csrfHandler.SetBaseCookie(http.Cookie{
 		HttpOnly: true,
-		Path:     "/",
+		Path:     "/",                  // Cookie is available within this path
 		Secure:   app.InProduction,     // false for development, true for production (only HTTPS allowed)
 		SameSite: http.SameSiteLaxMode, // not strict to only the same site (with the same domain name)
 	})

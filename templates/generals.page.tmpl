@@ -1,0 +1,115 @@
+{{template "base" .}}
+
+{{define "content"}}
+
+  <div class="container">
+
+    <div class="row">
+      <!-- <div class="col-lg-6 col-md-6 col-sm-12 col-xs-12"> -->
+      <div class="col">
+        <img src="/static/images/generals-quarters.png" class="img-fluid img-thumbnail mx-auto d-block room-image" alt="room image">
+      </div>
+    </div>
+
+    <div class="row">
+
+      <div class="col">
+        <h1 class="text-center mt-4">General's Quarters</h1>
+        <p>
+          Your home away from home, set on the majestic waters of the Atlantic Ocean, this will be a vacation to remember.
+          Your home away from home, set on the majestic waters of the Atlantic Ocean, this will be a vacation to remember.
+          Your home away from home, set on the majestic waters of the Atlantic Ocean, this will be a vacation to remember.
+        </p>
+      </div>			
+        
+    </div>
+
+    <div class="row">
+      <div class="col text-center">
+        <!-- this one is for submitting a form, but the other is for a link  
+        <button type="button" class="btn btn-success">Make Reservation Now</button> -->
+        <!-- #! (hash bang) tells the program to don't do anything if we click on it -->
+        <a id="check-availability-button" href="#!" class="btn btn-success">Check Availability</a>
+      </div>
+    </div>	
+
+  </div>
+
+{{end}}
+
+<!-- js section will be added in base layout in its js section as well -->
+{{define "js"}}
+  <script>
+    document.getElementById("check-availability-button").addEventListener("click", function(){
+      // notify("this is my message", "error")
+      //notifyModal("title", "<em>hello, world</em>", "success", "My text for the button");
+
+      let html =`
+      <form id="check-availability-form" action="" method="post" novalidate class="needs-validation">
+        <div class="row">
+          <div class="col">
+            <div class="row" id="reservation-dates-modal">
+              <div class="col">
+                <!--use disabled to disable SweetAlert from focusing on the first element automatically--> 
+                <input disabled required class="form-control" types="text" name="start" id="start" placeholder="Arrival">
+              </div>
+              <div class="col">
+                <input disabled required class="form-control" types="text" name="end" id="end" placeholder="Departure">
+              </div>
+            </div>
+          </div>
+        </div>
+      </form>
+      `
+      // call custom module from function attention (prompt())
+      attention.custom({
+        msg:      html, // pass html to the function custom
+        title:    "Choose your dates",
+        
+        // now we have a truly useful function that can call anywhere - pass them and their content to the "willOPen" and "didOpen" of the base.layout page
+        // willOpen hasbeen passed as an anonymous function
+        willOpen: () => {
+          const elem = document.getElementById('reservation-dates-modal');
+          // https://mymth.github.io/vanillajs-datepicker/#/options?id=datepicker-options
+          const rp = new DateRangePicker(elem, {
+            // add options to DateRangePicker from Vanilla JS
+            format: 'yyyy-mm-dd',
+            showOnFocus: true, //Whether to show the date picker automatically when the associated input filed receives focus.
+          })
+        },
+
+        didOpen: () => {
+          document.getElementById('start').removeAttribute('disabled')
+          document.getElementById('end').removeAttribute('disabled')
+        },
+
+        // result handed back from the SweetAlert or JavaScript module
+        // this callback (function) is called by our code
+        // the ting inside this callback will be execute as long as the result is not cancel and empty
+        callback: function(result) { 
+          console.log("called");
+
+          // reference to thr form
+          let form = document.getElementById("check-availability-form")
+          let formData = new FormData(form);
+          // append the scrf token to the form and pass to every go template
+          formData.append("csrf_token", "{{.CSRFToken}}")
+
+          // Javascript Fetch API (instead of AJAX) to request for JSON
+          // fetch request as a GET
+          fetch('/search-availability-json', {
+            method: "post", // convert fetch from get to post
+            body: formData, // include all the info (formData - start, end, csrf) to send along with that post 
+          })
+            .then(response => response.json()) // convert response to json
+            .then(data => { // take the data object and decide what to do with it
+              console.log(data) // in this case, the data object is {ok: true, message: "Available!"}
+              console.log(data.ok) // refer to the elemenet stored in the data object
+              console.log(data.message)
+            })
+        }
+      }); 
+    })
+
+  </script>
+{{end}}

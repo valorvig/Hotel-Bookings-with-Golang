@@ -5,8 +5,8 @@ import (
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
-	"github.com/valorvig/bookings/pkg/config"
-	"github.com/valorvig/bookings/pkg/handlers"
+	"github.com/valorvig/bookings/internal/config"
+	"github.com/valorvig/bookings/internal/handlers"
 )
 
 func routes(app *config.AppConfig) http.Handler {
@@ -15,11 +15,21 @@ func routes(app *config.AppConfig) http.Handler {
 	// middleware stack will be firstly execute before searching for a matching route
 	mux.Use(middleware.Recoverer) // recover from panic
 	// mux.Use(WriteToConsole)
-	mux.Use(NoSurf)
+	mux.Use(NoSurf) // this will prevent all POST without protection
 	mux.Use(SessionLoad)
 
 	mux.Get("/", handlers.Repo.Home)
 	mux.Get("/about", handlers.Repo.About)
+	mux.Get("/generals-quarters", handlers.Repo.Generals)
+	mux.Get("/majors-suite", handlers.Repo.Majors)
+
+	mux.Get("/search-availability", handlers.Repo.Availability)
+	mux.Post("/search-availability", handlers.Repo.PostAvailability)
+	mux.Post("/search-availability-json", handlers.Repo.AvailabilityJSON)
+
+	mux.Get("/contact", handlers.Repo.Contact)
+
+	mux.Get("/make-reservation", handlers.Repo.Reservation)
 
 	// the img won't know how to get to the folder "/static/images/house.jpg"
 	fileServer := http.FileServer(http.Dir("./static/"))

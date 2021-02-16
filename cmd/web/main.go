@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"github.com/alexedwards/scs/v2"
-	"github.com/valorvig/bookings/pkg/config"
-	"github.com/valorvig/bookings/pkg/handlers"
-	"github.com/valorvig/bookings/pkg/render"
+	"github.com/valorvig/bookings/internal/config"
+	"github.com/valorvig/bookings/internal/handlers"
+	"github.com/valorvig/bookings/internal/render"
 )
 
 const portNumber = ":8080"
@@ -36,7 +36,7 @@ func main() {
 
 	tc, err := render.CreateTemplateCache()
 	if err != nil {
-		log.Fatal("cannot cerate template cache")
+		log.Fatal("cannot create template cache")
 	}
 
 	app.TemplateCache = tc
