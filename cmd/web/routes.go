@@ -15,7 +15,7 @@ func routes(app *config.AppConfig) http.Handler {
 	// middleware stack will be firstly execute before searching for a matching route
 	mux.Use(middleware.Recoverer) // recover from panic
 	// mux.Use(WriteToConsole)
-	mux.Use(NoSurf) // this will prevent all POST without protection
+	mux.Use(NoSurf) // this will prevent all POST without passing the csrf protection
 	mux.Use(SessionLoad)
 
 	mux.Get("/", handlers.Repo.Home)
@@ -30,6 +30,8 @@ func routes(app *config.AppConfig) http.Handler {
 	mux.Get("/contact", handlers.Repo.Contact)
 
 	mux.Get("/make-reservation", handlers.Repo.Reservation)
+	mux.Post("/make-reservation", handlers.Repo.PostReservation)
+	mux.Get("/reservation-summary", handlers.Repo.ReservationSummary)
 
 	// the img won't know how to get to the folder "/static/images/house.jpg"
 	fileServer := http.FileServer(http.Dir("./static/"))

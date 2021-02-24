@@ -1,0 +1,16 @@
+# describe how Soda connects to our database
+# copy this file to database.yml when you do want to use it again, and fill the details again
+
+development:
+  dialect: postgres
+  database: bookings # correponding to our database name
+  user: # my db username (delete when upload to Github)
+  password: # my db password, leave blank if there is none (delete when upload to Github)
+  host: 127.0.0.1
+  pool: 5
+
+test:
+  url: {{envOr "TEST_DATABASE_URL" "postgres://postgres:postgres@127.0.0.1:5432/myapp_test"}}
+
+production:
+  url: {{envOr "DATABASE_URL" "postgres://postgres:postgres@127.0.0.1:5432/myapp_production"}}

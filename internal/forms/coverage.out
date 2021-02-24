@@ -1,0 +1,18 @@
+mode: set
+github.com/valorvig/bookings/internal/forms/errors.go:6.44,9.2 1 1
+github.com/valorvig/bookings/internal/forms/errors.go:12.42,15.18 2 1
+github.com/valorvig/bookings/internal/forms/errors.go:19.2,19.14 1 1
+github.com/valorvig/bookings/internal/forms/errors.go:15.18,17.3 1 1
+github.com/valorvig/bookings/internal/forms/forms.go:19.29,21.2 1 1
+github.com/valorvig/bookings/internal/forms/forms.go:24.33,30.2 1 1
+github.com/valorvig/bookings/internal/forms/forms.go:34.43,35.31 1 1
+github.com/valorvig/bookings/internal/forms/forms.go:35.31,37.37 2 1
+github.com/valorvig/bookings/internal/forms/forms.go:37.37,39.4 1 1
+github.com/valorvig/bookings/internal/forms/forms.go:47.39,50.13 2 1
+github.com/valorvig/bookings/internal/forms/forms.go:54.2,54.13 1 1
+github.com/valorvig/bookings/internal/forms/forms.go:50.13,53.3 1 1
+github.com/valorvig/bookings/internal/forms/forms.go:58.57,61.21 2 1
+github.com/valorvig/bookings/internal/forms/forms.go:65.2,65.13 1 1
+github.com/valorvig/bookings/internal/forms/forms.go:61.21,64.3 2 1
+github.com/valorvig/bookings/internal/forms/forms.go:69.38,70.40 1 1
+github.com/valorvig/bookings/internal/forms/forms.go:70.40,72.3 1 1

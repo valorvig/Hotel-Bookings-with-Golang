@@ -3,10 +3,11 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 
 	"github.com/valorvig/bookings/internal/config"
+	"github.com/valorvig/bookings/internal/forms"
+	"github.com/valorvig/bookings/internal/helpers"
 	"github.com/valorvig/bookings/internal/models"
 	"github.com/valorvig/bookings/internal/render"
 )
@@ -37,8 +38,8 @@ func NewHandlers(r *Repository) {
 // With this repository receiver, now this handler can access everything inside the repository, especially the AppConfig
 func (m *Repository) Home(w http.ResponseWriter, r *http.Request) {
 	// grab the IP address of the person visiting the site and store it in the home page session
-	remoteIP := r.RemoteAddr // IPv4 or IPv6 address
-	m.App.Session.Put(r.Context(), "remote_ip", remoteIP)
+	// remoteIP := r.RemoteAddr // IPv4 or IPv6 address
+	// m.App.Session.Put(r.Context(), "remote_ip", remoteIP)
 
 	render.RenderTemplate(w, r, "home.page.tmpl", &models.TemplateData{})
 }
@@ -46,27 +47,85 @@ func (m *Repository) Home(w http.ResponseWriter, r *http.Request) {
 // About is the about page handler
 func (m *Repository) About(w http.ResponseWriter, r *http.Request) {
 	// perform some logic
-	stringMap := make(map[string]string)
-	stringMap["test"] = "Hello, again."
+	// stringMap := make(map[string]string)
+	// stringMap["test"] = "Hello, again."
 
-	// hold user's IP address in the session
-	// the value is empty if there is nothing in the session named "remote_ip"
-	remoteIP := m.App.Session.GetString(r.Context(), "remote_ip")
+	// // hold user's IP address in the session
+	// // the value is empty if there is nothing in the session named "remote_ip"
+	// remoteIP := m.App.Session.GetString(r.Context(), "remote_ip")
 
 	// after accessing the "session" from config, can do anything from it
 	// m.App.Session.
 
-	stringMap["remote_ip"] = remoteIP // Ex. [::1]:18107 - "::1" is the loopback address in ipv6, equal to 127.0.0.1 in ipv4.
+	// stringMap["remote_ip"] = remoteIP // Ex. [::1]:18107 - "::1" is the loopback address in ipv6, equal to 127.0.0.1 in ipv4.
 
 	// send the data to the template
 	render.RenderTemplate(w, r, "about.page.tmpl", &models.TemplateData{
-		StringMap: stringMap,
+		// StringMap: stringMap,
 	})
 }
 
 // Reservation renders the make a reservation page and displays form
+// render the make-reservation tempalte and include the empty form
 func (m *Repository) Reservation(w http.ResponseWriter, r *http.Request) {
-	render.RenderTemplate(w, r, "make-reservation.page.tmpl", &models.TemplateData{})
+	var emptyReservation models.Reservation
+	data := make(map[string]interface{})
+	data["reservation"] = emptyReservation // have to have the exact same name "reservation" as below
+
+	render.RenderTemplate(w, r, "make-reservation.page.tmpl", &models.TemplateData{
+		Form: forms.New(nil), // have access to the form the first time this page is loaded
+		Data: data,
+	})
+}
+
+// PostReservation handles the posting of a reservation form
+func (m *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
+	// it's a good practice to use ParseForm after parsing a form
+	err := r.ParseForm()
+	// err = errors.New("this is an error message") // intentionally create an error for testing purpose
+	if err != nil {
+		// log.Println(err)
+		helpers.ServerError(w, err)
+		return
+	}
+
+	// We have to prevent users from losing all filled info after getting an error
+	// So we need to indicate the error and where to fix it to the users
+	// create "reservation" to reserve user's input data and prevent them from losing afterwards
+	reservation := models.Reservation{
+		FirstName: r.Form.Get("first_name"),
+		LastName:  r.Form.Get("last_name"),
+		Phone:     r.Form.Get("phone"),
+		Email:     r.Form.Get("email"),
+	}
+
+	// create a form with value
+	form := forms.New(r.PostForm)
+
+	// check if this form has first_name value, and add to the error mapping if it does
+	// form.Has("first_name", r) // no longer need this after we've created "func (f *Form) Required(fields ...string)"
+	form.Required("first_name", "last_name", "email") // form will have an error if one of these have an empty string
+	form.MinLength("first_name", 3)
+	// Required and then MinLength, so the first error from REquired will be displayed first
+	form.IsEmail("email")
+
+	if !form.Valid() {
+		data := make(map[string]interface{}) // create a variable to hold the data
+		data["reservation"] = reservation
+
+		render.RenderTemplate(w, r, "make-reservation.page.tmpl", &models.TemplateData{
+			Form: form,
+			Data: data,
+		})
+		return
+	}
+
+	// put reservation into session
+	m.App.Session.Put(r.Context(), "reservation", reservation)
+
+	// shouldn't re-display the page - use redirect instead to prevent submitting the form twice accidentally
+	// standard practice - anytime you receive a POST request, you should direct users to another page with an HTTP redirect
+	http.Redirect(w, r, "/reservation-summary", http.StatusSeeOther) // 303
 }
 
 // Generals renders the room page
@@ -113,7 +172,9 @@ func (m *Repository) AvailabilityJSON(w http.ResponseWriter, r *http.Request) {
 
 	out, err := json.MarshalIndent(resp, "", "     ")
 	if err != nil {
-		log.Println(err)
+		// log.Println(err)
+		helpers.ServerError(w, err)
+		return // let's return, we don't want to go any further
 	}
 
 	// log.Println(string(out))
@@ -126,3 +187,33 @@ func (m *Repository) AvailabilityJSON(w http.ResponseWriter, r *http.Request) {
 func (m *Repository) Contact(w http.ResponseWriter, r *http.Request) {
 	render.RenderTemplate(w, r, "contact.page.tmpl", &models.TemplateData{})
 }
+
+func (m *Repository) ReservationSummary(w http.ResponseWriter, r *http.Request) {
+	// get "reservation" out of the session
+	// still not enough because the session, although it's storing a reservation, it has no idea what type that is - so we need to type assert
+	reservation, ok := m.App.Session.Get(r.Context(), "reservation").(models.Reservation)
+	// Ex. In case someone try to visit the page with "/reservation-summary" directly without making the reservation first
+	if !ok {
+		// 1) no session variable and data, 2) no variable called "reservation" in the session, 3) can't cast variable named "reservation" to a models.reservation
+		// log.Println("cannot get item from session")
+		m.App.ErrorLog.Println("Can't get error from session")
+		m.App.Session.Put(r.Context(), "error", "Can't get reservation from session")
+		http.Redirect(w, r, "/", http.StatusTemporaryRedirect) // use 300 because maybe they're going to make a reservation, or they'll come back later.
+		return                                                 // we don't want to go further and display with a blank screen.
+		// try typing "/reservation-summary" directly to see the result
+	}
+
+	// remove our data from the reservation
+	m.App.Session.Remove(r.Context(), "reservation")
+
+	data := make(map[string]interface{})
+	data["reservation"] = reservation
+
+	render.RenderTemplate(w, r, "reservation-summary.page.tmpl", &models.TemplateData{
+		Data: data,
+	})
+}
+
+/*
+try using ./run.sh
+*/

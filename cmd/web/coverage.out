@@ -1,0 +1,12 @@
+mode: set
+github.com/valorvig/bookings/cmd/web/middleware.go:11.53,12.71 1 0
+github.com/valorvig/bookings/cmd/web/middleware.go:12.71,16.3 2 0
+github.com/valorvig/bookings/cmd/web/middleware.go:21.45,32.2 3 1
+github.com/valorvig/bookings/cmd/web/middleware.go:36.50,39.2 1 1
+github.com/valorvig/bookings/cmd/web/routes.go:12.49,41.2 18 1
+github.com/valorvig/bookings/cmd/web/main.go:22.13,24.16 2 0
+github.com/valorvig/bookings/cmd/web/main.go:28.2,37.16 4 0
+github.com/valorvig/bookings/cmd/web/main.go:24.16,26.3 1 0
+github.com/valorvig/bookings/cmd/web/main.go:44.18,67.16 10 1
+github.com/valorvig/bookings/cmd/web/main.go:72.2,82.12 6 1
+github.com/valorvig/bookings/cmd/web/main.go:67.16,70.3 2 0

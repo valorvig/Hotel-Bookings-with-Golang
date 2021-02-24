@@ -1,0 +1,22 @@
+mode: set
+github.com/valorvig/bookings/internal/handlers/handlers.go:26.47,30.2 1 1
+github.com/valorvig/bookings/internal/handlers/handlers.go:33.33,35.2 1 1
+github.com/valorvig/bookings/internal/handlers/handlers.go:39.67,45.2 3 1
+github.com/valorvig/bookings/internal/handlers/handlers.go:48.68,66.2 5 1
+github.com/valorvig/bookings/internal/handlers/handlers.go:70.74,79.2 4 1
+github.com/valorvig/bookings/internal/handlers/handlers.go:82.78,85.16 2 1
+github.com/valorvig/bookings/internal/handlers/handlers.go:93.2,110.19 6 1
+github.com/valorvig/bookings/internal/handlers/handlers.go:122.2,126.66 2 1
+github.com/valorvig/bookings/internal/handlers/handlers.go:85.16,88.3 2 0
+github.com/valorvig/bookings/internal/handlers/handlers.go:110.19,119.3 4 0
+github.com/valorvig/bookings/internal/handlers/handlers.go:130.71,132.2 1 1
+github.com/valorvig/bookings/internal/handlers/handlers.go:135.69,137.2 1 1
+github.com/valorvig/bookings/internal/handlers/handlers.go:140.75,142.2 1 1
+github.com/valorvig/bookings/internal/handlers/handlers.go:145.79,155.2 3 1
+github.com/valorvig/bookings/internal/handlers/handlers.go:165.79,172.16 3 1
+github.com/valorvig/bookings/internal/handlers/handlers.go:178.2,179.14 2 1
+github.com/valorvig/bookings/internal/handlers/handlers.go:172.16,174.3 1 0
+github.com/valorvig/bookings/internal/handlers/handlers.go:183.70,185.2 1 0
+github.com/valorvig/bookings/internal/handlers/handlers.go:187.81,192.9 2 1
+github.com/valorvig/bookings/internal/handlers/handlers.go:202.2,209.4 4 0
+github.com/valorvig/bookings/internal/handlers/handlers.go:192.9,199.3 4 1
