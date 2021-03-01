@@ -55,6 +55,9 @@ func run() (*driver.DB, error) { // add *driver.DB and return db, so that we can
 	// that we've defined ourselves and we want to store in the reservation model.
 	// we've stored the value in the session. // m.App.Session.Put(r.Context(), "reservation", reservation)
 	gob.Register(models.Reservation{}) // we want to store in the reservation model - now we can store values in the session
+	gob.Register(models.User{})
+	gob.Register(models.Room{})
+	gob.Register(models.Restriction{})
 
 	// change this to true when in production
 	app.InProduction = false // change one place but affect everywhere
@@ -100,7 +103,7 @@ func run() (*driver.DB, error) { // add *driver.DB and return db, so that we can
 	// We can create a new instance, a new MySQL function. This is a reposaitory for a handler - holds a repository that's of type for Postgres, MySQL, Oracle, MongoDB, etc.
 	repo := handlers.NewRepo(&app, db) // db is a pointer to a driver - that driver can now only handle postgres
 	handlers.NewHandlers(repo)
-	render.NewTemplates(&app)
+	render.NewRenderer(&app)
 	helpers.NewHelpers(&app)
 
 	// http.HandleFunc("/", handlers.Repo.Home)

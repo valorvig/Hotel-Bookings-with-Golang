@@ -4,19 +4,12 @@ package models
 
 import "time"
 
-// Reservation holds reservation data
-type Reservation struct {
-	FirstName string
-	LastName  string
-	Email     string
-	Phone     string
-}
+// Describe our database in a format that Go can understand
+// Table user from the database
+// Use singular word since we only represent each stuff individually
 
-// describe our database in a format that Go can understand
-// table users
-
-// Users is the user model
-type Users struct {
+// User is the user model
+type User struct {
 	// It's a convention to have field names of the user type correspond to the actual name used in the database.
 	// Use uppercase letters for the first part of each name and leave the underscores out.
 	ID          int
@@ -29,24 +22,24 @@ type Users struct {
 	UpdatedAt   time.Time
 }
 
-// Rooms is the room model
-type Rooms struct {
+// Room is the room model
+type Room struct {
 	ID        int
 	RoomName  string
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
 
-// Restrictions is the restriction model
-type Restrictions struct {
+// Restriction is the restriction model
+type Restriction struct {
 	ID              int
 	RestrictionName string
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
 }
 
-// Reservations is  the reservation model
-type Reservations struct {
+// Reservation is  the reservation model
+type Reservation struct {
 	ID        int
 	FirstName string
 	LastName  string
@@ -58,11 +51,11 @@ type Reservations struct {
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	// We don't just have to put in the fields exactly as they exist in the database table
-	Room Rooms
+	Room Room
 }
 
-// RoomRestrictions is the room restriction model
-type RoomRestrictions struct {
+// RoomRestriction is the room restriction model
+type RoomRestriction struct {
 	ID            int
 	StartDate     time.Time
 	EndDate       time.Time
@@ -71,8 +64,8 @@ type RoomRestrictions struct {
 	RiestrictonID int
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
-	Room          Rooms
+	Room          Room
 	// What if I want to also show the reservation and the restriction, just add them here
-	Reservation Reservations
-	Restriction Restrictions
+	Reservation Reservation
+	Restriction Restriction
 }

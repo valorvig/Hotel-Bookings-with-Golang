@@ -65,7 +65,7 @@ func getRoutes() http.Handler {
 
 	repo := NewRepo(&app, nil) // ****[big] nil
 	NewHandlers(repo)
-	render.NewTemplates(&app)
+	render.NewRenderer(&app)
 
 	// copy from routes.go -----------------------------------------------
 

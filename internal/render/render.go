@@ -20,8 +20,9 @@ var functions = template.FuncMap{}
 var app *config.AppConfig
 var pathToTemplates = "./templates"
 
-// NewTemplates sets the config fro the template package
-func NewTemplates(a *config.AppConfig) {
+// NewRenderer sets the config fro the template package
+// func NewTemplates(a *config.AppConfig) {
+func NewRenderer(a *config.AppConfig) {
 	app = a
 }
 
@@ -35,9 +36,11 @@ func AddDefaultData(td *models.TemplateData, r *http.Request) *models.TemplateDa
 	return td
 }
 
-// RenderTemplate renders templates using html/template
+// Template renders templates using html/template
 // (Capitalize the name sothat it can be exported)
-func RenderTemplate(w http.ResponseWriter, r *http.Request, tmpl string, td *models.TemplateData) error {
+// It's a ocnvention to not name a function with a given package as the first part of the word - to make it more readable
+// func RenderTemplate(w http.ResponseWriter, r *http.Request, tmpl string, td *models.TemplateData) error {
+func Template(w http.ResponseWriter, r *http.Request, tmpl string, td *models.TemplateData) error {
 	// create a variable to hold template cache
 	var tc map[string]*template.Template
 
