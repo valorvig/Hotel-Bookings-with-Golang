@@ -22,6 +22,7 @@ func ClientError(w http.ResponseWriter, status int) {
 }
 
 func ServerError(w http.ResponseWriter, err error) { // in case something went wrong with the server
+	// [Big] Stack tracing is useful for diagnostic
 	trace := fmt.Sprintf("%s\n%s", err.Error(), debug.Stack())                                     // (1) the nature of the error itself and (2) the actual stack trace - the detailed info about the nature of the rror that took palce
 	app.ErrorLog.Println(trace)                                                                    // you may send the error via email or others instead
 	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError) // use StatusText to make it absolutely technically correct

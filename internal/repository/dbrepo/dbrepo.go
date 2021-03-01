@@ -11,7 +11,7 @@ import (
 
 type postgresDBRepo struct {
 	App *config.AppConfig
-	DB  *sql.DB
+	DB  *sql.DB // holds a database connection pool
 }
 
 // create a connection pool for my sql to postgres db

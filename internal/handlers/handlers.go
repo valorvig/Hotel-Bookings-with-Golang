@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
+	"time"
 
 	"github.com/valorvig/bookings/internal/config"
 	"github.com/valorvig/bookings/internal/driver"
@@ -101,6 +103,29 @@ func (m *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// We can't put these dates (string type) directly to StartDate/EndDate in models.Reservation because they are defined to accept type time
+	sd := r.Form.Get("start_date")
+	ed := r.Form.Get("end_date")
+
+	// Format: 2020-01-01 --- 01/02 03:04:05PM '06 -0700
+	// https://www.pauladamsmith.com/blog/2011/05/go_time.html
+	// convert string to time
+	layout := "2006-01-02"
+	startDate, err := time.Parse(layout, sd)
+	if err != nil {
+		helpers.ServerError(w, err)
+	}
+	endDate, err := time.Parse(layout, ed)
+	if err != nil {
+		helpers.ServerError(w, err)
+	}
+
+	// Convert string to int for RoomID in Reservation - Atoi (Alpha to integer)
+	roomID, err := strconv.Atoi(r.Form.Get("room_id"))
+	if err != nil {
+		helpers.ServerError(w, err)
+	}
+
 	// We have to prevent users from losing all filled info after getting an error
 	// So we need to indicate the error and where to fix it to the users
 	// create "reservation" to reserve user's input data and prevent them from losing afterwards
@@ -109,6 +134,9 @@ func (m *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
 		LastName:  r.Form.Get("last_name"),
 		Phone:     r.Form.Get("phone"),
 		Email:     r.Form.Get("email"),
+		StartDate: startDate,
+		EndDate:   endDate,
+		RoomID:    roomID,
 	}
 
 	// create a form with value
@@ -121,6 +149,7 @@ func (m *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
 	// Required and then MinLength, so the first error from REquired will be displayed first
 	form.IsEmail("email")
 
+	// Form validation
 	if !form.Valid() {
 		data := make(map[string]interface{}) // create a variable to hold the data
 		data["reservation"] = reservation
@@ -130,6 +159,12 @@ func (m *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
 			Data: data,
 		})
 		return
+	}
+
+	// After form validation, write the info to the database
+	err = m.DB.InsertReservation(reservation)
+	if err != nil {
+		helpers.ServerError(w, err)
 	}
 
 	// put reservation into session
