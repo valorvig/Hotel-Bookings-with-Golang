@@ -1,4 +1,4 @@
-// connect our applicaiton to the database
+// connect our application to the database
 
 package driver
 
@@ -14,7 +14,7 @@ import (
 // DB holds the database connection pool
 // by using struct, it can hold a driver to postgres or whatever through SQL field
 type DB struct {
-	SQL *sql.DB
+	SQL *sql.DB // database connection
 }
 
 var dbConn = &DB{} // reference to the DB type and initialize and empty struct
@@ -28,7 +28,7 @@ const maxIdleDbConn = 5 // 5 is nice
 const maxDbLifetime = 5 * time.Minute
 
 // ConnectSQL creates database pool for Postgres
-func ConnectSQL(dsn string) (*DB, error) {
+func ConnectSQL(dsn string) (*DB, error) { // dsn - data source name
 	d, err := NewDatabase(dsn)
 	if err != nil {
 		// let it die beacause we can't go any further with our application if it can't connect to the database

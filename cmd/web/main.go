@@ -10,6 +10,7 @@ import (
 
 	"github.com/alexedwards/scs/v2"
 	"github.com/valorvig/bookings/internal/config"
+	"github.com/valorvig/bookings/internal/driver"
 	"github.com/valorvig/bookings/internal/handlers"
 	"github.com/valorvig/bookings/internal/helpers"
 	"github.com/valorvig/bookings/internal/models"
@@ -24,10 +25,11 @@ var infoLog *log.Logger
 var errorLog *log.Logger
 
 func main() {
-	err := run()
+	db, err := run()
 	if err != nil {
 		log.Fatal(err) // stop the application from running
 	}
+	defer db.SQL.Close()
 
 	fmt.Println(fmt.Sprintf("starting application on port %s", portNumber))
 	// _ = http.ListenAndServe(portNumber, nil)
@@ -45,7 +47,7 @@ func main() {
 $go run cmd/web/*.go
 */
 
-func run() error {
+func run() (*driver.DB, error) { // add *driver.DB and return db, so that we can use db.SQL.defer() later in main()
 	// cut and paste everything in the main() starting and above "render.NewTemplates(&app)" till the beginning
 
 	// what am I going to put in the session - the code with "gob" looks a bit odd
@@ -76,17 +78,27 @@ func run() error {
 
 	app.Session = session
 
+	// connect to database
+	log.Println("Connecting to database...")
+	// we're going to use hard coding for the meantime
+	db, err := driver.ConnectSQL("host=localhost port=5432 dbname=bookings user=postgres password=1234")
+	if err != nil {
+		log.Fatal("Cannot connect to database! Dying...")
+	}
+	// defer db.SQL.Close() // we can't use this since the code is now in run() not main(). We still don't want to close it even after running run()
+
 	tc, err := render.CreateTemplateCache()
 	if err != nil {
 		log.Fatal("cannot create template cache")
-		return err
+		return nil, err
 	}
 
 	app.TemplateCache = tc
 	app.UseCache = false
 
 	// transfer main app and repo to other files
-	repo := handlers.NewRepo(&app)
+	// We can create a new instance, a new MySQL function. This is a reposaitory for a handler - holds a repository that's of type for Postgres, MySQL, Oracle, MongoDB, etc.
+	repo := handlers.NewRepo(&app, db) // db is a pointer to a driver - that driver can now only handle postgres
 	handlers.NewHandlers(repo)
 	render.NewTemplates(&app)
 	helpers.NewHelpers(&app)
@@ -94,5 +106,5 @@ func run() error {
 	// http.HandleFunc("/", handlers.Repo.Home)
 	// http.HandleFunc("/about", handlers.Repo.About)
 
-	return nil
+	return db, nil
 }

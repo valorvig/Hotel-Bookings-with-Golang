@@ -63,7 +63,7 @@ func getRoutes() http.Handler {
 	// the problem is, if createTemplateCache is called, the pathToTemplates it used will be "./templates" from render.go, not the right ome for this test
 	app.UseCache = true
 
-	repo := NewRepo(&app)
+	repo := NewRepo(&app, nil) // ****[big] nil
 	NewHandlers(repo)
 	render.NewTemplates(&app)
 

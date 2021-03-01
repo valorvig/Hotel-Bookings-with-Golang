@@ -6,10 +6,13 @@ import (
 	"net/http"
 
 	"github.com/valorvig/bookings/internal/config"
+	"github.com/valorvig/bookings/internal/driver"
 	"github.com/valorvig/bookings/internal/forms"
 	"github.com/valorvig/bookings/internal/helpers"
 	"github.com/valorvig/bookings/internal/models"
 	"github.com/valorvig/bookings/internal/render"
+	"github.com/valorvig/bookings/internal/repository"
+	"github.com/valorvig/bookings/internal/repository/dbrepo"
 )
 
 // we can't have the struct model templatedata here since it's gpnna create import cycle error
@@ -20,12 +23,14 @@ var Repo *Repository
 // Repository is the repository type (Repository pattern)
 type Repository struct {
 	App *config.AppConfig
+	DB  repository.DatabaseRepo
 }
 
 // NewRepo creates a new repository
-func NewRepo(a *config.AppConfig) *Repository {
+func NewRepo(a *config.AppConfig, db *driver.DB) *Repository {
 	return &Repository{
 		App: a,
+		DB:  dbrepo.NewPostgresRepo(db.SQL, a),
 	}
 }
 
@@ -40,6 +45,13 @@ func (m *Repository) Home(w http.ResponseWriter, r *http.Request) {
 	// grab the IP address of the person visiting the site and store it in the home page session
 	// remoteIP := r.RemoteAddr // IPv4 or IPv6 address
 	// m.App.Session.Put(r.Context(), "remote_ip", remoteIP)
+	// m.App.Session.Put(r.Context(), "remote_ip", remoteIP)
+
+	/*
+		// example of using AllUsers
+		// DB is a field of type "DatabaseRepo" which has method "AllUsers()"
+		m.DB.AllUsers()
+	*/
 
 	render.RenderTemplate(w, r, "home.page.tmpl", &models.TemplateData{})
 }
