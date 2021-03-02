@@ -112,10 +112,12 @@ func (m *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
 	// convert string to time
 	layout := "2006-01-02"
 	startDate, err := time.Parse(layout, sd)
+	// fmt.Println("startDate====", reflect.TypeOf(startDate), startDate)
 	if err != nil {
 		helpers.ServerError(w, err)
 	}
 	endDate, err := time.Parse(layout, ed)
+	// fmt.Println("endDate====", reflect.TypeOf(endDate), endDate)
 	if err != nil {
 		helpers.ServerError(w, err)
 	}

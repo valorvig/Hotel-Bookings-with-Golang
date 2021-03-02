@@ -28,9 +28,9 @@ func (m *postgresDBRepo) InsertReservation(res models.Reservation) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	stmt := `insert into reservation (first_name, last_name, email, phone, start date,
+	stmt := `insert into reservations (first_name, last_name, email, phone, start_date,
 		end_date, room_id, created_at, updated_at)
-		values ($1, $2, $3, $4, $5, $6, $7, $8, $9)`
+		values ($1, $2, $3, $4, $5, $6, $7, $8, $9) returning id` // psotgres uses "returning id" instead of "last_insert_id"
 
 	// With context, much safer and more robust means of talking to the database
 	_, err := m.DB.ExecContext(ctx, stmt,
@@ -40,8 +40,9 @@ func (m *postgresDBRepo) InsertReservation(res models.Reservation) error {
 		res.Phone,
 		res.StartDate,
 		res.EndDate,
-		time.Now, // the current time we have created this
-		time.Now,
+		res.RoomID,
+		time.Now(), // the current time we have created this
+		time.Now(),
 	)
 
 	if err != nil {
