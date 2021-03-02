@@ -7,5 +7,7 @@ type DatabaseRepo interface {
 	AllUsers() bool
 
 	// get info from the reservation page and put them to the database
-	InsertReservation(res models.Reservation) error
+	InsertReservation(res models.Reservation) (int, error)
+
+	InsertRoomRestriction(r models.RoomRestriction) error
 }

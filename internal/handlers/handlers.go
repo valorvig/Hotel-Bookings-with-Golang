@@ -120,12 +120,14 @@ func (m *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
 	// fmt.Println("endDate====", reflect.TypeOf(endDate), endDate)
 	if err != nil {
 		helpers.ServerError(w, err)
+		return // (1) return to stop execution
 	}
 
 	// Convert string to int for RoomID in Reservation - Atoi (Alpha to integer)
 	roomID, err := strconv.Atoi(r.Form.Get("room_id"))
 	if err != nil {
 		helpers.ServerError(w, err)
+		return // (2) return to stop execution
 	}
 
 	// We have to prevent users from losing all filled info after getting an error
@@ -164,9 +166,31 @@ func (m *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// After form validation, write the info to the database
-	err = m.DB.InsertReservation(reservation)
+	newReservationID, err := m.DB.InsertReservation(reservation)
 	if err != nil {
 		helpers.ServerError(w, err)
+		return // (3) ***without return, it will still run, but won't stop execution at this point, and it will fail when it reach to the database insert part
+	}
+
+	// prepare for inserting restriction
+	restriction := models.RoomRestriction{
+		// ID:            0, // we don't need this - it will be automatically generated in the DB
+		StartDate:     startDate,
+		EndDate:       endDate,
+		RoomID:        roomID,
+		ReservationID: newReservationID,
+		RestrictionID: 1, // have to fill up the db field before we can actually use the real thing
+		// CreatedAt:     0, // these two will be taken care at the database level
+		// UpdatedAt:     0,
+		// Room:          0, // these three are not actually part of the db field, but we might use them in the future
+		// Reservation:   0,
+		// Restriction:   0,
+	}
+
+	err = m.DB.InsertRoomRestriction(restriction)
+	if err != nil {
+		helpers.ServerError(w, err)
+		return
 	}
 
 	// put reservation into session
