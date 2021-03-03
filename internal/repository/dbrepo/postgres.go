@@ -48,7 +48,7 @@ func (m *postgresDBRepo) InsertReservation(res models.Reservation) (int, error) 
 		res.RoomID,
 		time.Now(), // the current time we have created this
 		time.Now(),
-	).Scan(&newID)
+	).Scan(&newID) // scan that row and put it into "newID"
 
 	if err != nil {
 		return 0, err
@@ -81,4 +81,75 @@ func (m *postgresDBRepo) InsertRoomRestriction(r models.RoomRestriction) error {
 		return err
 	}
 	return nil
+}
+
+// SearchAvailabilityByDatesByRoomID returns true if availability exists for a given room (roomID), and false if no availability exists
+// don't want to just give info about what rooms are available, which is only helpful for single room. Let's add "roomID"
+func (m *postgresDBRepo) SearchAvailabilityByDatesByRoomID(start, end time.Time, roomID int) (bool, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	var numRows int
+
+	query := `
+		select
+			count(id)
+		from
+			room_restrictions
+		where
+			room_id = $1
+			and $2 < end_date and $3 > start_date;`
+
+	row := m.DB.QueryRowContext(ctx, query, roomID, start, end)
+	err := row.Scan(&numRows)
+	if err != nil {
+		return false, err
+	}
+
+	if numRows == 0 {
+		return true, nil
+	}
+	return false, nil
+}
+
+// SearchAvailabilityForAllRooms returns a slice of available rooms, if any, for given date range
+// It would be more useful to return a slice of rooms rahter than just 2 integers for room_name and room_id.
+func (m *postgresDBRepo) SearchAvailabilityForAllRooms(start, end time.Time) ([]models.Room, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	var rooms []models.Room
+
+	query := `
+		select
+			r.id, r.room_name
+		from
+			rooms r
+		where r.id not in 
+		(select room_id from room_restrictions rr where $1 < rr.end_date and $2 > rr.start_date);
+		`
+	// QueryContext returns roes, but QueryRowContext returns the lastest row
+	rows, err := m.DB.QueryContext(ctx, query, start, end)
+	if err != nil {
+		return rooms, err
+	}
+
+	for rows.Next() {
+		var room models.Room
+		err := rows.Scan(
+			&room.ID,
+			&room.RoomName,
+		)
+		if err != nil {
+			return rooms, err // we're going to ignore this rooms
+		}
+
+		rooms = append(rooms, room)
+	}
+
+	if err = rows.Err(); err != nil {
+		return rooms, err
+	}
+
+	return rooms, nil
 }
