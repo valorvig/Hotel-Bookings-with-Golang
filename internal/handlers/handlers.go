@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -226,7 +225,63 @@ func (m *Repository) PostAvailability(w http.ResponseWriter, r *http.Request) {
 	// start := r.FormValue("start")
 	// end := r.FormValue("end")
 
-	w.Write([]byte(fmt.Sprintf("start date is %s and end date is %s", start, end)))
+	// convert string to time
+	layout := "2006-01-02"
+	startDate, err := time.Parse(layout, start)
+	if err != nil {
+		helpers.ServerError(w, err)
+	}
+	endDate, err := time.Parse(layout, end)
+	if err != nil {
+		helpers.ServerError(w, err)
+		return // (1) return to stop execution
+	}
+
+	rooms, err := m.DB.SearchAvailabilityForAllRooms(startDate, endDate)
+	if err != nil {
+		helpers.ServerError(w, err)
+		return
+	}
+
+	/* for internal use and test only - telling something with a refresh page is not that userful
+	// When there is availability, the actual rooms variable will ahve at least one entry
+	for _, i := range rooms {
+		m.App.InfoLog.Println("ROOM:", i.ID, i.RoomName)
+	}
+	*/
+
+	if len(rooms) == 0 {
+		// no availability
+		// m.App.InfoLog.Println("No availability")
+		m.App.Session.Put(r.Context(), "error", "No availability")
+		http.Redirect(w, r, "/search-availability", http.StatusSeeOther)
+		return // want everything to stop at this point
+	}
+
+	data := make(map[string]interface{})
+	data["rooms"] = rooms
+
+	res := models.Reservation{
+		// ID:        0, // don't care
+		// FirstName: "",
+		// LastName:  "",
+		// Email:     "",
+		// Phone:     "",
+		StartDate: startDate,
+		EndDate:   endDate,
+		// RoomID:    0,
+		// CreatedAt: time.Time{},
+		// UpdatedAt: time.Time{},
+		// Room:      models.Room{},
+	}
+
+	m.App.Session.Put(r.Context(), "reservation", res) // putting it in the session, now the info is available to use
+
+	// w.Write([]byte(fmt.Sprintf("start date is %s and end date is %s", start, end)))
+
+	render.Template(w, r, "choose-room.page.tmpl", &models.TemplateData{
+		Data: data,
+	})
 }
 
 // we don't need to use this JSON struct outside the package, and only its JSON fields is needed

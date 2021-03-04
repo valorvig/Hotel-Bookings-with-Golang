@@ -13,7 +13,7 @@ but we can't import main to handlers since it will cause import cycle.
 So this package config is like a medium for such a case.
 */
 
-// AppConfig holds the applicaiton config
+// AppConfig holds the application config
 // declare here to be available for everyone that has access to AppConfig
 type AppConfig struct {
 	UseCache      bool

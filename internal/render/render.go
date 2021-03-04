@@ -64,6 +64,7 @@ func Template(w http.ResponseWriter, r *http.Request, tmpl string, td *models.Te
 
 	buf := new(bytes.Buffer)
 
+	// fill the empty template
 	td = AddDefaultData(td, r)
 
 	// store the value in buf and don't pass any data (nil)
@@ -90,6 +91,7 @@ func CreateTemplateCache() (map[string]*template.Template, error) {
 	// func Glob(pattern string) (matches []string, err error) - Glob returns the names of all files matching pattern or nil if there is no matching file.
 	pages, err := filepath.Glob(fmt.Sprintf("%s/*.page.tmpl", pathToTemplates))
 	if err != nil {
+		fmt.Println("ERROR: pages, err := filepath.Glob(fmt.Sprintf()")
 		return myCache, err
 	}
 
