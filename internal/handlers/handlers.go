@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/go-chi/chi"
 	"github.com/valorvig/bookings/internal/config"
 	"github.com/valorvig/bookings/internal/driver"
 	"github.com/valorvig/bookings/internal/forms"
@@ -18,7 +19,7 @@ import (
 
 // we can't have the struct model templatedata here since it's gpnna create import cycle error
 
-// Repo the repository used by the handlers
+// Repo the repository used by the handlers - it's implemented in routes.go
 var Repo *Repository
 
 // Repository is the repository type (Repository pattern)
@@ -340,6 +341,27 @@ func (m *Repository) ReservationSummary(w http.ResponseWriter, r *http.Request) 
 	render.Template(w, r, "reservation-summary.page.tmpl", &models.TemplateData{
 		Data: data,
 	})
+}
+
+func (m *Repository) ChooseRoom(w http.ResponseWriter, r *http.Request) {
+	roomID, err := strconv.Atoi(chi.URLParam(r, "id")) // the "id" from routes
+	if err != nil {
+		helpers.ServerError(w, err)
+		return
+	}
+
+	// get the whole "reservation" from the session
+	res, ok := m.App.Session.Get(r.Context(), "reservation").(models.Reservation) // res - reservation
+	if !ok {
+		helpers.ServerError(w, err)
+		return
+	}
+
+	res.RoomID = roomID
+
+	m.App.Session.Put(r.Context(), "reservation", res) // put modified "res" back to the session
+
+	http.Redirect(w, r, "/make-reservation", http.StatusSeeOther)
 }
 
 /*
