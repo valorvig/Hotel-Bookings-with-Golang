@@ -50,8 +50,7 @@ type Reservation struct {
 	RoomID    int
 	CreatedAt time.Time
 	UpdatedAt time.Time
-	// We don't just have to put in the fields exactly as they exist in the database table
-	Room Room
+	Room      Room // We don't just have to put in the fields exactly as they exist in the database table
 }
 
 // RoomRestriction is the room restriction model

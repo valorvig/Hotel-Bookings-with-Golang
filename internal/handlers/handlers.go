@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
 	"time"
@@ -82,13 +83,39 @@ func (m *Repository) About(w http.ResponseWriter, r *http.Request) {
 // Reservation renders the make a reservation page and displays form
 // render the make-reservation tempalte and include the empty form
 func (m *Repository) Reservation(w http.ResponseWriter, r *http.Request) {
-	var emptyReservation models.Reservation
+	// var emptyReservation models.Reservation
+
+	// Pull the ereservation out of the session
+	res, ok := m.App.Session.Get(r.Context(), "reservation").(models.Reservation) // res - reservation
+	if !ok {
+		helpers.ServerError(w, errors.New("cannot get reservation from session"))
+		return
+	}
+
+	room, err := m.DB.GetRoomByID(res.RoomID) // return the whole model of that room
+	if err != nil {
+		helpers.ServerError(w, err)
+		return
+	}
+
+	res.Room.RoomName = room.RoomName
+
+	sd := res.StartDate.Format("2006-01-02")
+	ed := res.EndDate.Format("2006-01-02")
+
+	// We have a stringMap in our models "TemplateData"
+	stringMap := make(map[string]string)
+	stringMap["start_date"] = sd
+	stringMap["end_date"] = ed
+
 	data := make(map[string]interface{})
-	data["reservation"] = emptyReservation // have to have the exact same name "reservation" as below
+	// data["reservation"] = emptyReservation // have to have the exact same name "reservation" as below
+	data["reservation"] = res
 
 	render.Template(w, r, "make-reservation.page.tmpl", &models.TemplateData{
-		Form: forms.New(nil), // have access to the form the first time this page is loaded
-		Data: data,
+		Form:      forms.New(nil), // have access to the form the first time this page is loaded
+		Data:      data,
+		StringMap: stringMap,
 	})
 }
 
@@ -344,16 +371,16 @@ func (m *Repository) ReservationSummary(w http.ResponseWriter, r *http.Request) 
 }
 
 func (m *Repository) ChooseRoom(w http.ResponseWriter, r *http.Request) {
-	roomID, err := strconv.Atoi(chi.URLParam(r, "id")) // the "id" from routes
+	roomID, err := strconv.Atoi(chi.URLParam(r, "id")) // get "id" from url parameter in routes page
 	if err != nil {
 		helpers.ServerError(w, err)
 		return
 	}
 
-	// get the whole "reservation" from the session
+	// Pull the ereservation out of the session
 	res, ok := m.App.Session.Get(r.Context(), "reservation").(models.Reservation) // res - reservation
 	if !ok {
-		helpers.ServerError(w, err)
+		helpers.ServerError(w, errors.New("cannot get reservation from session"))
 		return
 	}
 
@@ -361,7 +388,7 @@ func (m *Repository) ChooseRoom(w http.ResponseWriter, r *http.Request) {
 
 	m.App.Session.Put(r.Context(), "reservation", res) // put modified "res" back to the session
 
-	http.Redirect(w, r, "/make-reservation", http.StatusSeeOther)
+	http.Redirect(w, r, "/make-reservation", http.StatusSeeOther) // redirect to the Get page
 }
 
 /*
