@@ -332,8 +332,11 @@ func (m *Repository) PostAvailability(w http.ResponseWriter, r *http.Request) {
 
 // we don't need to use this JSON struct outside the package, and only its JSON fields is needed
 type jsonResponse struct { // put it closr to the function you're using, so it's easy to find
-	OK      bool   `json:"ok"`
-	Message string `json:"message"`
+	OK        bool   `json:"ok"`
+	Message   string `json:"message"`
+	RoomID    string `json:"room_id"`
+	StartDate string `json:"start_date"`
+	EndDate   string `json:"end_date"`
 }
 
 // AvailabilityJSON handles request for availability and send JSON response
@@ -351,8 +354,11 @@ func (m *Repository) AvailabilityJSON(w http.ResponseWriter, r *http.Request) {
 
 	available, _ := m.DB.SearchAvailabilityByDatesByRoomID(startDate, endDate, roomID)
 	resp := jsonResponse{
-		OK:      available,
-		Message: "",
+		OK:        available,
+		Message:   "",
+		StartDate: sd,
+		EndDate:   ed,
+		RoomID:    strconv.Itoa(roomID), // converted as int and convert back to string
 	}
 
 	out, err := json.MarshalIndent(resp, "", "     ")
@@ -366,6 +372,16 @@ func (m *Repository) AvailabilityJSON(w http.ResponseWriter, r *http.Request) {
 	// Tell the browser, here's the kind of content (application JSON header) you're going to get
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(out)
+	/*
+		Write writes an HTTP/1.1 request, which is the header and body, in wire format. This method consults the following fields of the request:
+			Host
+			URL
+			Method (defaults to "GET")
+			Header
+			ContentLength
+			TransferEncoding
+			Body
+	*/
 }
 
 // Contact renders the search availability page

@@ -222,17 +222,22 @@
 					// use async since the sweet alert uses await in this one
 					async function custom(c) {
 						const {
+							// allow these things to be specified
+							icon = "",
 							msg = "",
 							title = "",
+							showConfirmButton = true,
 						} = c;
 						
 						// Multiple inputs modal
 						const { value: result } = await Swal.fire({
+							icon: icon,
 							title: title,
 							html: msg,
 							backdrop: false,
 							focusConfirm: false,
 							showCancelButton: true,
+							showConfirmButton: showConfirmButton,
 
 							// Popup lifecycle hook. Synchronously runs before the popup is shown on screen.
 							// Initialize the datepicker before the popup
