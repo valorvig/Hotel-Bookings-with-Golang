@@ -41,7 +41,8 @@
 		<script>
 			const elem = document.getElementById("reservation-dates");
 			const rangepicker = new DateRangePicker(elem, {
-				format: "yyyy-mm-dd"
+				format: "yyyy-mm-dd",
+				minDate: new Date(), // minDate prevents user from choosing outdated dates, create javascript object: new Date() creates a new date object with the current date and time
 			});
 		</script>
 {{end}}
