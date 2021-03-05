@@ -75,6 +75,7 @@
             // add options to DateRangePicker from Vanilla JS
             format: 'yyyy-mm-dd',
             showOnFocus: true, //Whether to show the date picker automatically when the associated input filed receives focus.
+            minDate: new Date(),
           })
         },
 
@@ -94,6 +95,7 @@
           let formData = new FormData(form);
           // append the scrf token to the form and pass to every go template
           formData.append("csrf_token", "{{.CSRFToken}}")
+          formData.append("room_id", "1");
 
           // Javascript Fetch API (instead of AJAX) to request for JSON
           // fetch request as a GET
@@ -103,9 +105,16 @@
           })
             .then(response => response.json()) // convert response to json
             .then(data => { // take the data object and decide what to do with it
+              /*
               console.log(data) // in this case, the data object is {ok: true, message: "Available!"}
               console.log(data.ok) // refer to the elemenet stored in the data object
               console.log(data.message)
+              */
+             if (data.ok) {
+               console.log("room is available")
+             } else {
+               console.log("room is not available")
+             }
             })
         }
       }); 

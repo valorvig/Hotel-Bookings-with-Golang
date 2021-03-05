@@ -91,6 +91,7 @@
     	{{end}}
 
 			<script>
+				// attention contains a js object returned from Prompt() to select which function to use
 				let attention = Prompt(); // attention is {toast: toast, success: success} from Prompt's return
 
 				/*
@@ -275,6 +276,7 @@
 					}
 
 					// select each type of alert you want as a sub module
+					// return object (a dictionary or a slice of choices)
 					return {
 						toast: toast,
 						success: success,
