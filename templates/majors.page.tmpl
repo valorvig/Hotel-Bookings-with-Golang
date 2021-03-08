@@ -28,10 +28,122 @@
       <div class="col text-center">
         <!-- this one is for submitting a form, but the other is for a link  
         <button type="button" class="btn btn-success">Make Reservation Now</button> -->
-        <a href="/make-reservation-ms" class="btn btn-success">Check Availability</a>
+        <a id="check-availability-button" href="#!" class="btn btn-success">Check Availability</a>
+      </div>
+    </div>	
+
+  </div>
+        <!-- <a href="/make-reservation-ms" class="btn btn-success">Check Availability</a>
       </div>
     </div>	
     
-  </div>
+  </div> -->
 
+{{end}}
+
+{{define "js"}}
+  <script>
+    document.getElementById("check-availability-button").addEventListener("click", function(){
+      // notify("this is my message", "error")
+      //notifyModal("title", "<em>hello, world</em>", "success", "My text for the button");
+
+      let html =`
+      <form id="check-availability-form" action="" method="post" novalidate class="needs-validation">
+        <div class="row">
+          <div class="col">
+            <div class="row" id="reservation-dates-modal">
+              <div class="col">
+                <!--use disabled to disable SweetAlert from focusing on the first element automatically--> 
+                <input disabled required class="form-control" types="text" name="start" id="start" placeholder="Arrival">
+              </div>
+              <div class="col">
+                <input disabled required class="form-control" types="text" name="end" id="end" placeholder="Departure">
+              </div>
+            </div>
+          </div>
+        </div>
+      </form>
+      `
+      // call custom module from function attention (prompt())
+      attention.custom({
+        msg:      html, // pass html to the function custom
+        title:    "Choose your dates",
+        
+        // now we have a truly useful function that can call anywhere - pass them and their content to the "willOPen" and "didOpen" of the base.layout page
+        // willOpen hasbeen passed as an anonymous function
+        willOpen: () => {
+          const elem = document.getElementById('reservation-dates-modal');
+          // https://mymth.github.io/vanillajs-datepicker/#/options?id=datepicker-options
+          const rp = new DateRangePicker(elem, {
+            // add options to DateRangePicker from Vanilla JS
+            format: 'yyyy-mm-dd',
+            showOnFocus: true, //Whether to show the date picker automatically when the associated input filed receives focus.
+            minDate: new Date(),
+          })
+        },
+
+        didOpen: () => {
+          document.getElementById('start').removeAttribute('disabled')
+          document.getElementById('end').removeAttribute('disabled')
+        },
+
+        // result handed back from the SweetAlert or JavaScript module
+        // this callback (function) is called by our code
+        // the ting inside this callback will be execute as long as the result is not cancel and empty
+        callback: function(result) { 
+          console.log("called");
+
+          // reference to thr form
+          let form = document.getElementById("check-availability-form")
+          let formData = new FormData(form);
+          // append the scrf token to the form and pass to every go template
+          formData.append("csrf_token", "{{.CSRFToken}}")
+          formData.append("room_id", "2");
+
+          // Javascript Fetch API (instead of AJAX) to request for JSON
+          // fetch request as a GET
+          fetch('/search-availability-json', {
+            method: "post", // convert fetch from get to post
+            body: formData, // include all the info (formData - start, end, csrf) to send along with that post 
+          })
+            .then(response => response.json()) // convert response to json
+            .then(data => { // take the data object and decide what to do with it
+              /*
+              console.log(data) // in this case, the data object is {ok: true, message: "Available!"}
+              console.log(data.ok) // refer to the elemenet stored in the data object
+              console.log(data.message)
+              */
+              if (data.ok) {
+                // console.log("room is available")
+                
+                // call sweetAlert pop-up "custom" modal
+                attention.custom({
+                  icon: 'success',
+                  showConfirmButton: false,
+                  msg: '<p>Room is available!</p>'
+                    // + '<p><a href="#!" class="btn btn-primary">' // use hashbang #! to do nothing
+                    + '<p><a href="/book-room?id='
+                    + data.room_id
+                    + '&s=' // use & for the next parameter
+                    + data.start_date
+                    + '&e='
+                    + data.end_date
+                    + '" class="btn btn-primary">'
+                    + 'Book now!</a></p>',
+                    // send values via url and let the handler takes them
+                })
+              } else {
+                // console.log("room is not available")
+
+                // call sweetAlert pop-up "error" modal
+                attention.error({
+                  msg: "No availability!",
+                })
+              }
+            })
+        }
+      }); 
+    })
+
+  </script>
 {{end}}
