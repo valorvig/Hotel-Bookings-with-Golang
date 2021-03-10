@@ -17,6 +17,7 @@ Try leave every thing out to make it able to run first
 package dbrepo
 
 import (
+	"errors"
 	"time"
 
 	"github.com/valorvig/bookings/internal/models"
@@ -182,6 +183,11 @@ func (m *testDBRepo) GetRoomByID(id int) (models.Room, error) {
 	*/
 
 	var room models.Room
+
+	// test error case
+	if id > 2 {
+		return room, errors.New("Some error")
+	}
 
 	/*
 		query := `

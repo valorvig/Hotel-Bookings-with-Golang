@@ -97,13 +97,19 @@ func (m *Repository) Reservation(w http.ResponseWriter, r *http.Request) {
 	// Pull the ereservation out of the session
 	res, ok := m.App.Session.Get(r.Context(), "reservation").(models.Reservation) // res - reservation
 	if !ok {
-		helpers.ServerError(w, errors.New("cannot get reservation from session"))
-		return
+		// helpers.ServerError(w, errors.New("cannot get reservation from session"))
+		// return
+
+		// use more useful error
+		m.App.Session.Put(r.Context(), "error", "can't get reservation from session") // might not be useful for users but for exercise
+		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)                        // redirect to the root page
+		return                                                                        // don't want anything else to work after this
 	}
 
 	room, err := m.DB.GetRoomByID(res.RoomID) // return the whole model of that room
 	if err != nil {
-		helpers.ServerError(w, err)
+		m.App.Session.Put(r.Context(), "error", "can't find room!")
+		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 		return
 	}
 

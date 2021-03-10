@@ -5,7 +5,6 @@ import (
 	"log"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
 	"testing"
 
 	"github.com/valorvig/bookings/internal/models"
@@ -24,35 +23,36 @@ type postData struct {
 
 // variable for the actual test
 var theTests = []struct {
-	name               string     // name of the test
-	url                string     // the path which is matched by our roots
-	method             string     // GET or POST
-	params             []postData // things that are being posted and that's a form can have more than 1 input
-	expectedStatusCode int        // what kind of response code we're getting back from the web server (200, 404, etc.)
+	name   string // name of the test
+	url    string // the path which is matched by our roots
+	method string // GET or POST
+	// params             []postData // things that are being posted and that's a form can have more than 1 input
+	expectedStatusCode int // what kind of response code we're getting back from the web server (200, 404, etc.)
 }{
-	/*
-		{"home", "/", "GET", []postData{}, http.StatusOK},
-		{"about", "/about", "GET", []postData{}, http.StatusOK},
-		{"gq", "/generals-quarters", "GET", []postData{}, http.StatusOK},
-		{"ms", "/majors-suite", "GET", []postData{}, http.StatusOK},
-		{"sa", "/search-availability", "GET", []postData{}, http.StatusOK},
-		{"contact", "/search-availability", "GET", []postData{}, http.StatusOK},
-		{"ms", "/make-reservation", "GET", []postData{}, http.StatusOK},
-		{"post-search-avail", "/search-availability", "POST", []postData{
-			{key: "start", value: "2020-01-01"},
-			{key: "end", value: "2020-01-02"},
-		}, http.StatusOK},
-		{"post-search-avail-json", "/search-availability-json", "POST", []postData{
-			{key: "start", value: "2020-01-01"},
-			{key: "end", value: "2020-01-02"},
-		}, http.StatusOK},
-		{"make reservation post", "/make-reservation", "POST", []postData{
-			{key: "first_name", value: "John"},
-			{key: "last_name", value: "Smith"},
-			{key: "email", value: "abc@abc.com"},
-			{key: "phone", value: "555-55555"},
-		}, http.StatusOK},
-	*/
+	// GET
+	{"home", "/", "GET" /*[]postData{},*/, http.StatusOK},
+	{"about", "/about", "GET" /*[]postData{},*/, http.StatusOK},
+	{"gq", "/generals-quarters", "GET" /*[]postData{},*/, http.StatusOK},
+	{"ms", "/majors-suite", "GET" /*[]postData{},*/, http.StatusOK},
+	{"sa", "/search-availability", "GET" /*[]postData{},*/, http.StatusOK},
+	{"contact", "/search-availability", "GET" /*[]postData{},*/, http.StatusOK},
+	{"ms", "/make-reservation", "GET" /*[]postData{},*/, http.StatusOK},
+
+	// POST
+	// {"post-search-avail", "/search-availability", "POST", []postData{
+	// 	{key: "start", value: "2020-01-01"},
+	// 	{key: "end", value: "2020-01-02"},
+	// }, http.StatusOK},
+	// {"post-search-avail-json", "/search-availability-json", "POST", []postData{
+	// 	{key: "start", value: "2020-01-01"},
+	// 	{key: "end", value: "2020-01-02"},
+	// }, http.StatusOK},
+	// {"make reservation post", "/make-reservation", "POST", []postData{
+	// 	{key: "first_name", value: "John"},
+	// 	{key: "last_name", value: "Smith"},
+	// 	{key: "email", value: "abc@abc.com"},
+	// 	{key: "phone", value: "555-55555"},
+	// }, http.StatusOK},
 }
 
 func TestHandlers(t *testing.T) {
@@ -62,34 +62,36 @@ func TestHandlers(t *testing.T) {
 
 	for _, e := range theTests {
 		// In thsi chapter, we'll focus on GET first
-		if e.method == "GET" {
-			// create web client
-			resp, err := ts.Client().Get(ts.URL + e.url)
-			if err != nil {
-				t.Log(err)
-				t.Fatal(err)
-			}
 
-			if resp.StatusCode != e.expectedStatusCode {
-				t.Errorf("for %s, expected %d but got %d", e.name, e.expectedStatusCode, resp.StatusCode)
-			}
-		} else { // POST
-			// a post request as a variable that corresponds to what we're posting in the form
-			// an empty variable in the form that is required by the method
-			values := url.Values{}
-			for _, x := range e.params {
-				values.Add(x.key, x.value) // add the key and value to our post
-			}
-			// call our test clinet, but use PostForm instead of Get
-			resp, err := ts.Client().PostForm(ts.URL+e.url, values)
-			if err != nil {
-				t.Log(err)
-				t.Fatal(err)
-			}
+		// if e.method == "GET" {
+		// create web client
+		resp, err := ts.Client().Get(ts.URL + e.url)
+		if err != nil {
+			t.Log(err)
+			t.Fatal(err)
+		}
 
-			if resp.StatusCode != e.expectedStatusCode {
-				t.Errorf("for %s, expected %d but got %d", e.name, e.expectedStatusCode, resp.StatusCode)
-			}
+		if resp.StatusCode != e.expectedStatusCode {
+			t.Errorf("for %s, expected %d but got %d", e.name, e.expectedStatusCode, resp.StatusCode)
+		}
+		/*
+			} else { // POST
+				// a post request as a variable that corresponds to what we're posting in the form
+				// an empty variable in the form that is required by the method
+				values := url.Values{}
+				for _, x := range e.params {
+					values.Add(x.key, x.value) // add the key and value to our post
+				}
+				// call our test clinet, but use PostForm instead of Get
+				resp, err := ts.Client().PostForm(ts.URL+e.url, values)
+				if err != nil {
+					t.Log(err)
+					t.Fatal(err)
+				}
+		*/
+
+		if resp.StatusCode != e.expectedStatusCode {
+			t.Errorf("for %s, expected %d but got %d", e.name, e.expectedStatusCode, resp.StatusCode)
 		}
 	}
 }
@@ -112,13 +114,13 @@ func TestRepository_Reservation(t *testing.T) {
 
 	// request record - simulating what we get from the request resposne cycle
 	// response cycle: fire a web browser -> hit our website -> get a handler -> pass the request -> get a response writer -> write the response to the web browser
-	rr := httptest.NewRecorder()
+	rr := httptest.NewRecorder() // ResponseRecorder is an implementation of http.ResponseWriter that records its mutations for later inspection in tests.
 	// put our reservation in the session with our built context instead of the default context from request
 	session.Put(ctx, "reservation", reservation)
 
 	// call the handler resrvation function (but we can't call it directly)
 	// turn the handker reservation into a handler function, so we can it directly
-	handler := http.HandlerFunc(Repo.Reservation) // now act as a server
+	handler := http.HandlerFunc(Repo.Reservation) // now act as a server to run "Repo.Reservation"
 
 	// (m *Repository) Reservation(w http.ResponseWriter, r *http.Request)
 	// we call the handler directly with ServeHTTP thae same as we call it on our route in the main funciton
@@ -133,6 +135,32 @@ func TestRepository_Reservation(t *testing.T) {
 	if rr.Code != http.StatusOK {
 		t.Errorf("Rservation handler returned wrong response code: %d, wanted %d", rr.Code, http.StatusOK)
 	}
+
+	// test case where reservations is not in session (reset everything)
+	req, _ = http.NewRequest("GET", "/make-erservation", nil)
+	// still need the context with the session header - without this, we can't even test the situation where we can't find the value in the session because there is no session
+	ctx = getCtx(req)
+	req = req.WithContext(ctx) // now we have a session without reservation because we aren't goona add it
+	rr = httptest.NewRecorder()
+
+	handler.ServeHTTP(rr, req)
+	if rr.Code != http.StatusTemporaryRedirect { // use StatusTemporaryRedirect because we expects to find that
+		t.Errorf("Rservation handler returned wrong response code: %d, wanted %d", rr.Code, http.StatusOK)
+	}
+
+	// test with non-existing room
+	req, _ = http.NewRequest("GET", "/make-erservation", nil)
+	ctx = getCtx(req)
+	req = req.WithContext(ctx)
+	rr = httptest.NewRecorder()
+	reservation.RoomID = 100 // assign the room >2 to simulate the error
+	session.Put(ctx, "reservation", reservation)
+
+	handler.ServeHTTP(rr, req)
+	if rr.Code != http.StatusTemporaryRedirect { // use StatusTemporaryRedirect because we expects to find that
+		t.Errorf("Rservation handler returned wrong response code: %d, wanted %d", rr.Code, http.StatusOK)
+	}
+
 }
 
 // need to put our reservation variable into the session
