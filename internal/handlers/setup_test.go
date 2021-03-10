@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"testing"
 	"time"
 
 	"github.com/alexedwards/scs/v2"
@@ -26,11 +27,10 @@ var session *scs.SessionManager
 var pathToTemplates = "./../../templates"
 var functions = template.FuncMap{} // put this as the same one as from render.go to avoid error
 
-// This time we create a function that creates everything we need rather than using "TestMain" like we did in cmd/web.
-// require routes to call the handlers
-// routes return a Handler
-func getRoutes() http.Handler {
-	// copy from main.go ------------------------------------------------
+// we won't just use getRoutes, but we'll take advantage of the test_main that we used in our other tests
+// TestMain is part of the testing package in the standarad library
+func TestMain(m *testing.M) {
+	// Cut from getRoutes (that is laso from main.go)
 
 	gob.Register(models.Reservation{}) // register the models.Reservation to the session, so we know that we can use that in the session
 
@@ -63,9 +63,57 @@ func getRoutes() http.Handler {
 	// the problem is, if createTemplateCache is called, the pathToTemplates it used will be "./templates" from render.go, not the right ome for this test
 	app.UseCache = true
 
-	repo := NewRepo(&app, nil) // ****[big] nil
+	repo := NewTestRepo(&app)
 	NewHandlers(repo)
 	render.NewRenderer(&app)
+
+	//-----------------------
+	// add os.Exit to run the test before it dies (exits)
+	os.Exit(m.Run())
+}
+
+// This time we create a function that creates everything we need rather than using "TestMain" like we did in cmd/web.
+// require routes to call the handlers
+// routes return a Handler
+func getRoutes() http.Handler {
+	// copy from main.go ------------------------------------------------
+
+	/*
+		gob.Register(models.Reservation{}) // register the models.Reservation to the session, so we know that we can use that in the session
+
+		// change this to true when in production
+		app.InProduction = false
+
+		// paste these from main.go to avoid handler error while testing
+		infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime) // Ldate & Ltime are the local date and local time
+		app.InfoLog = infoLog
+
+		errorLog := log.New(os.Stdout, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
+		app.ErrorLog = errorLog
+
+		session = scs.New()
+		session.Lifetime = 24 * time.Hour
+		session.Cookie.Persist = true
+		session.Cookie.SameSite = http.SameSiteLaxMode
+		session.Cookie.Secure = app.InProduction
+
+		app.Session = session // store session into the field
+
+		tc, err := CreateTestTemplateCache() // we don't want to call CreateTemplateCache directly
+		if err != nil {
+			log.Fatal("cannot create template cache")
+		}
+
+		app.TemplateCache = tc
+		// if false, it's going to rebuild the page (createTemplateCache) on every request in render
+		// if true, then get the tempalte from the template cache
+		// the problem is, if createTemplateCache is called, the pathToTemplates it used will be "./templates" from render.go, not the right ome for this test
+		app.UseCache = true
+
+		repo := NewTestRepo(&app)
+		NewHandlers(repo)
+		render.NewRenderer(&app)
+	*/
 
 	// copy from routes.go -----------------------------------------------
 
