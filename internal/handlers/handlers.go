@@ -390,6 +390,22 @@ type jsonResponse struct { // put it closr to the function you're using, so it's
 // AvailabilityJSON handles request for availability and send JSON response
 // We're building a JSON request, not a web page that can't send back straight text
 func (m *Repository) AvailabilityJSON(w http.ResponseWriter, r *http.Request) {
+	// it's a good practice to have ParseForm when parsing a form
+	// if you don't have this you can't test it
+	err := r.ParseForm()
+	if err != nil {
+		// can't parse form, so return appropriate json
+		resp := jsonResponse{
+			OK:      false,
+			Message: "Internal server error",
+		}
+
+		out, _ := json.MarshalIndent(resp, "", "      ")
+		w.Header().Set("current-Type", "application/json")
+		w.Write(out)
+		return
+	}
+	//----------------
 
 	sd := r.Form.Get("start")
 	ed := r.Form.Get("end")
@@ -401,6 +417,22 @@ func (m *Repository) AvailabilityJSON(w http.ResponseWriter, r *http.Request) {
 	roomID, _ := strconv.Atoi(r.Form.Get("room_id"))
 
 	available, _ := m.DB.SearchAvailabilityByDatesByRoomID(startDate, endDate, roomID)
+	if err != nil {
+		// helpers.ServerError(w, err)
+		// return
+
+		// when you hit the database, need to ensure that you aren't writing a server error - return json instead
+		resp := jsonResponse{
+			OK:      false,
+			Message: "Error connecting to database",
+		}
+
+		out, _ := json.MarshalIndent(resp, "", "      ")
+		w.Header().Set("current-Type", "application/json")
+		w.Write(out)
+		return
+	}
+	// manually construct json response
 	resp := jsonResponse{
 		OK:        available,
 		Message:   "",
@@ -410,11 +442,15 @@ func (m *Repository) AvailabilityJSON(w http.ResponseWriter, r *http.Request) {
 	}
 
 	out, err := json.MarshalIndent(resp, "", "     ")
-	if err != nil {
-		// log.Println(err)
-		helpers.ServerError(w, err)
-		return // let's return, we don't want to go any further
-	}
+
+	// leave out the error checking since it will be a never ending chain whne the find an error and try to create json
+	/*
+		if err != nil {
+			// log.Println(err)
+			helpers.ServerError(w, err)
+			return // let's return, we don't want to go any further
+		}
+	*/
 
 	// log.Println(string(out))
 	// Tell the browser, here's the kind of content (application JSON header) you're going to get
