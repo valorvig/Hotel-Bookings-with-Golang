@@ -39,9 +39,9 @@ func (m *testDBRepo) InsertReservation(res models.Reservation) (int, error) {
 		// context.Background() is always available evertwhere in your application
 		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 		defer cancel()
-	*/
-	var newID int
-	/*
+
+		var newID int
+
 		stmt := `insert into reservations (first_name, last_name, email, phone, start_date,
 			end_date, room_id, created_at, updated_at)
 			values ($1, $2, $3, $4, $5, $6, $7, $8, $9) returning id`
@@ -64,8 +64,17 @@ func (m *testDBRepo) InsertReservation(res models.Reservation) (int, error) {
 		if err != nil {
 			return 0, err
 		}
+
+		return newID, nil
 	*/
-	return newID, nil
+
+	// create a fail situation for test purpose
+	// if the room id is 2, then fail; otherwise, pass
+	if res.RoomID == 2 {
+		return 0, errors.New("some error")
+	}
+
+	return 1, nil
 }
 
 // InsertRoomRestriction inserts a room restriction into the database
@@ -93,6 +102,12 @@ func (m *testDBRepo) InsertRoomRestriction(r models.RoomRestriction) error {
 			return err
 		}
 	*/
+
+	// creat a fail case
+	if r.RoomID == 1000 {
+		return errors.New("some error")
+	}
+
 	return nil // should be good for now
 }
 

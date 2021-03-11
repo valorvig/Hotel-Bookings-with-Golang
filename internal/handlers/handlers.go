@@ -102,7 +102,7 @@ func (m *Repository) Reservation(w http.ResponseWriter, r *http.Request) {
 
 		// use more useful error
 		m.App.Session.Put(r.Context(), "error", "can't get reservation from session") // might not be useful for users but for exercise
-		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)                        // redirect to the root page
+		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)                        // redirect to the home page
 		return                                                                        // don't want anything else to work after this
 	}
 
@@ -138,70 +138,93 @@ func (m *Repository) Reservation(w http.ResponseWriter, r *http.Request) {
 
 // PostReservation handles the posting of a reservation form
 func (m *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
-	reservation, ok := m.App.Session.Get(r.Context(), "reservation").(models.Reservation)
-	if !ok {
-		helpers.ServerError(w, errors.New("can't get from session"))
-		return
-	}
+	/*
+		reservation, ok := m.App.Session.Get(r.Context(), "reservation").(models.Reservation)
+		if !ok {
+			// helpers.ServerError(w, errors.New("can't get from session"))
 
-	// it's a good practice to use ParseForm after parsing a form
+			m.App.Session.Put(r.Context(), "error", "can't parse form") // might not be useful for users but for exercise
+			http.Redirect(w, r, "/", http.StatusTemporaryRedirect)      // redirect to the home page
+
+			return
+		}
+	*/
+
+	// it's always a good practice to use ParseForm after parsing a form
 	err := r.ParseForm()
 	// err = errors.New("this is an error message") // intentionally create an error for testing purpose
 	if err != nil {
 		// log.Println(err)
-		helpers.ServerError(w, err)
+		// helpers.ServerError(w, err)
+
+		m.App.Session.Put(r.Context(), "error", "can't parse form") // might not be useful for users but for exercise
+		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)      // redirect to the home page
+
 		return
 	}
 
+	// We can't put these dates (string type) directly to StartDate/EndDate in models.Reservation because they are defined to accept type time
+	sd := r.Form.Get("start_date")
+	ed := r.Form.Get("end_date")
+
+	// Format: 2020-01-01 --- 01/02 03:04:05PM '06 -0700
+	// https://www.pauladamsmith.com/blog/2011/05/go_time.html
+	// convert string to time
+	layout := "2006-01-02"
+	startDate, err := time.Parse(layout, sd)
+	// fmt.Println("startDate====", reflect.TypeOf(startDate), startDate)
+	if err != nil {
+		// helpers.ServerError(w, err)
+
+		// Never trust the user's input eventhough we also have date picker to check the correct format
+		// So we're going to test this as well
+		m.App.Session.Put(r.Context(), "error", "can't parse start date") // meaningful error
+		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+		return
+	}
+
+	endDate, err := time.Parse(layout, ed)
+	// fmt.Println("endDate====", reflect.TypeOf(endDate), endDate)
+	if err != nil {
+		// helpers.ServerError(w, err)
+
+		m.App.Session.Put(r.Context(), "error", "can't parse end date")
+		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+
+		return // (1) return to stop execution
+	}
+
+	// Convert string to int for RoomID in Reservation - Atoi (Alpha to integer)
+	roomID, err := strconv.Atoi(r.Form.Get("room_id"))
+	if err != nil {
+		// helpers.ServerError(w, err)
+
+		m.App.Session.Put(r.Context(), "error", "invalid data!")
+		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+
+		return // (2) return to stop execution
+	}
+
 	/*
-		// We can't put these dates (string type) directly to StartDate/EndDate in models.Reservation because they are defined to accept type time
-		sd := r.Form.Get("start_date")
-		ed := r.Form.Get("end_date")
-
-		// Format: 2020-01-01 --- 01/02 03:04:05PM '06 -0700
-		// https://www.pauladamsmith.com/blog/2011/05/go_time.html
-		// convert string to time
-		layout := "2006-01-02"
-		startDate, err := time.Parse(layout, sd)
-		// fmt.Println("startDate====", reflect.TypeOf(startDate), startDate)
-		if err != nil {
-			helpers.ServerError(w, err)
-		}
-		endDate, err := time.Parse(layout, ed)
-		// fmt.Println("endDate====", reflect.TypeOf(endDate), endDate)
-		if err != nil {
-			helpers.ServerError(w, err)
-			return // (1) return to stop execution
-		}
-
-		// Convert string to int for RoomID in Reservation - Atoi (Alpha to integer)
-		roomID, err := strconv.Atoi(r.Form.Get("room_id"))
-		if err != nil {
-			helpers.ServerError(w, err)
-			return // (2) return to stop execution
-		}
+		// Update res
+		reservation.FirstName = r.Form.Get("first_name")
+		reservation.LastName = r.Form.Get("last_name")
+		reservation.Phone = r.Form.Get("phone")
+		reservation.Email = r.Form.Get("email")
 	*/
 
-	// Update res
-	reservation.FirstName = r.Form.Get("first_name")
-	reservation.LastName = r.Form.Get("last_name")
-	reservation.Phone = r.Form.Get("phone")
-	reservation.Email = r.Form.Get("email")
-
-	/*
-		// We have to prevent users from losing all filled info after getting an error
-		// So we need to indicate the error and where to fix it to the users
-		// create "reservation" to reserve user's input data and prevent them from losing afterwards
-		reservation := models.Reservation{
-			FirstName: r.Form.Get("first_name"),
-			LastName:  r.Form.Get("last_name"),
-			Phone:     r.Form.Get("phone"),
-			Email:     r.Form.Get("email"),
-			StartDate: startDate,
-			EndDate:   endDate,
-			RoomID:    roomID,
-		}
-	*/
+	// We have to prevent users from losing all filled info after getting an error
+	// So we need to indicate the error and where to fix it to the users
+	// create "reservation" to reserve user's input data and prevent them from losing afterwards
+	reservation := models.Reservation{
+		FirstName: r.Form.Get("first_name"),
+		LastName:  r.Form.Get("last_name"),
+		Phone:     r.Form.Get("phone"),
+		Email:     r.Form.Get("email"),
+		StartDate: startDate,
+		EndDate:   endDate,
+		RoomID:    roomID,
+	}
 
 	// create a form with value
 	form := forms.New(r.PostForm)
@@ -218,6 +241,8 @@ func (m *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
 		data := make(map[string]interface{}) // create a variable to hold the data
 		data["reservation"] = reservation
 
+		http.Error(w, "my own error message", http.StatusSeeOther)
+
 		render.Template(w, r, "make-reservation.page.tmpl", &models.TemplateData{
 			Form: form,
 			Data: data,
@@ -228,7 +253,11 @@ func (m *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
 	// After form validation, write the info to the database
 	newReservationID, err := m.DB.InsertReservation(reservation)
 	if err != nil {
-		helpers.ServerError(w, err)
+		// helpers.ServerError(w, err)
+
+		m.App.Session.Put(r.Context(), "error", "can't insert reservation into database!")
+		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+
 		return // (3) ***without return, it will still run, but won't stop execution at this point, and it will fail when it reach to the database insert part
 	}
 
@@ -249,7 +278,11 @@ func (m *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
 
 	err = m.DB.InsertRoomRestriction(restriction)
 	if err != nil {
-		helpers.ServerError(w, err)
+		// helpers.ServerError(w, err)
+
+		m.App.Session.Put(r.Context(), "error", "can't insert room restriction!")
+		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+
 		return
 	}
 
