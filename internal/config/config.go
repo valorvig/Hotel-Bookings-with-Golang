@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/alexedwards/scs/v2"
+	"github.com/valorvig/bookings/internal/models"
 )
 
 /*
@@ -22,4 +23,5 @@ type AppConfig struct {
 	ErrorLog      *log.Logger
 	InProduction  bool
 	Session       *scs.SessionManager
+	MailChan      chan models.MailData // we put MailData in the cofig so that it's available for the entire application
 }

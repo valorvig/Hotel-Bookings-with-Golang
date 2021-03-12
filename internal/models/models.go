@@ -2,7 +2,9 @@
 
 package models
 
-import "time"
+import (
+	"time"
+)
 
 // Describe our database in a format that Go can understand
 // Table user from the database
@@ -67,4 +69,15 @@ type RoomRestriction struct {
 	// What if I want to also show the reservation and the restriction, just add them here
 	Reservation Reservation
 	Restriction Restriction
+}
+
+// MailData holds an email message
+type MailData struct {
+	To      string
+	From    string
+	Subject string
+	// we could have assign it as int, but we might want to put formatting in that email and send HTML
+	// formatting in the content that we're going to send out via email
+	// Content template.HTML
+	Content string // easier to cast it as string
 }

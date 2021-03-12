@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 
@@ -177,6 +178,16 @@ func TestRepository_PostReservation(t *testing.T) {
 	reqBody = fmt.Sprintf("%s&%s", reqBody, "email=john@smith.com")
 	reqBody = fmt.Sprintf("%s&%s", reqBody, "phone=123456789")
 	reqBody = fmt.Sprintf("%s&%s", reqBody, "room_id=1")
+
+	// easier way using url - after that, you may replace all reqBody with postedData instead
+	postedData := url.Values{}
+	postedData.Add("start_date", "2050-01-01")
+	postedData.Add("end_date", "2050-01-02")
+	postedData.Add("first_name", "John")
+	postedData.Add("last_name", "Smith")
+	postedData.Add("email", "john@smith.com")
+	postedData.Add("phone", "555-555-5555")
+	postedData.Add("room_id", "1")
 
 	// Do the same things as TestRepository_Reservation initially, but we can't pass nil but the body to post
 	req, _ := http.NewRequest("POST", "/make-reservation", strings.NewReader(reqBody)) // create a POST to make-reservation

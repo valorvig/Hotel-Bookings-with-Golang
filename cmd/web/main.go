@@ -31,6 +31,38 @@ func main() {
 	}
 	defer db.SQL.Close()
 
+	// run() only runs once, so we would want to close the channel here instead of within the run() function
+	defer close(app.MailChan)
+
+	fmt.Println("Starting mail listener...")
+	ListenForMail() // test running the app before adding the message further
+
+	/*
+		// populate the message
+		msg := models.MailData{
+			To:      "john@do.ca",
+			From:    "me@here.com",
+			Subject: "Some subject",
+			Content: "",
+		}
+
+		// and just send the message tp the channel
+		app.MailChan <- msg
+	*/
+
+	/*
+		// send a test email when the program starts - need from address
+		from := "me@here.com"
+
+		// According to the functionality in the standard library, need some means of authenticating with the mail server
+		// We need to give our credentials, if any, to the email server that will allow us to send messages
+		auth := smtp.PlainAuth("", from, "", "localhost") // "" for testing identity
+		err = smtp.SendMail("localhost:1025", auth, from, []string{"you@there.com"}, []byte("Hello, world!"))
+		if err != nil {
+			log.Println(err)
+		}
+	*/
+
 	fmt.Println(fmt.Sprintf("starting application on port %s", portNumber))
 	// _ = http.ListenAndServe(portNumber, nil)
 
@@ -58,6 +90,12 @@ func run() (*driver.DB, error) { // add *driver.DB and return db, so that we can
 	gob.Register(models.User{})
 	gob.Register(models.Room{})
 	gob.Register(models.Restriction{})
+
+	// let's create a channel here
+	// if I put defer close() here, it's going to close as soon as this run function ends (run() only runs once at the first time)
+	// So we won't close it here but the palce after run() is called
+	mailChan := make(chan models.MailData)
+	app.MailChan = mailChan
 
 	// change this to true when in production
 	app.InProduction = false // change one place but affect everywhere
@@ -89,6 +127,7 @@ func run() (*driver.DB, error) { // add *driver.DB and return db, so that we can
 		log.Fatal("Cannot connect to database! Dying...")
 	}
 	// defer db.SQL.Close() // we can't use this since the code is now in run() not main(). We still don't want to close it even after running run()
+	log.Println("Connected to database!")
 
 	tc, err := render.CreateTemplateCache()
 	if err != nil {
