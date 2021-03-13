@@ -38,6 +38,7 @@ func main() {
 	ListenForMail() // test running the app before adding the message further
 
 	/*
+		// This is only for practicing. We wou'dn't want to populate it here, actually.
 		// populate the message
 		msg := models.MailData{
 			To:      "john@do.ca",
