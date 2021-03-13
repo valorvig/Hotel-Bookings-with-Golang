@@ -296,10 +296,11 @@ func (m *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
 
 	// populate the message
 	msg := models.MailData{
-		To:      reservation.Email, // send the notification to the guest's email
-		From:    "me@here.com",
-		Subject: "Reservation Confirmation",
-		Content: htmlMessage,
+		To:       reservation.Email, // send the notification to the guest's email
+		From:     "me@here.com",
+		Subject:  "Reservation Confirmation",
+		Content:  htmlMessage,
+		Template: "basic.html",
 	}
 
 	// and just send the message tp the channel

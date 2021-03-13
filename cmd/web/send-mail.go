@@ -3,7 +3,10 @@
 package main
 
 import (
+	"fmt"
+	"io/ioutil"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/valorvig/bookings/internal/models"
@@ -51,9 +54,23 @@ func sendMsg(m models.MailData) {
 	email := mail.NewMSG()
 	// set from, to, and subject
 	email.SetFrom(m.From).AddTo(m.To).SetSubject(m.Subject)
-	// Separate the body - we don't want to manually construct an email
-	// Requires a type of content and the content
-	email.SetBody(mail.TextHTML, m.Content)
+	// check if a template is specified
+	if m.Template == "" {
+		// Separate the body - we don't want to manually construct an email
+		// Requires a type of content and the content
+		email.SetBody(mail.TextHTML, m.Content)
+	} else {
+		// standard utilities read things from disk - data
+		data, err := ioutil.ReadFile(fmt.Sprintf("./email-templates/%s", m.Template))
+		if err != nil {
+			app.ErrorLog.Println(err)
+		}
+
+		mailTemplate := string(data)
+		// using Sprintf format %s won't work in this case
+		msgToSend := strings.Replace(mailTemplate, "[%body%]", m.Content, 1)
+		email.SetBody(mail.TextHTML, msgToSend)
+	}
 
 	err = email.Send(client)
 	if err != nil {

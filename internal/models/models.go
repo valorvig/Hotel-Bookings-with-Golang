@@ -79,5 +79,6 @@ type MailData struct {
 	// we could have assign it as int, but we might want to put formatting in that email and send HTML
 	// formatting in the content that we're going to send out via email
 	// Content template.HTML
-	Content string // easier to cast it as string
+	Content  string // easier to cast it as string
+	Template string
 }

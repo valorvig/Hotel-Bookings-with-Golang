@@ -52,6 +52,15 @@ func TestMain(m *testing.M) {
 
 	app.Session = session // store session into the field
 
+	// actual channel (the same as in main.go)
+	mailChan := make(chan models.MailData)
+	app.MailChan = mailChan
+	defer close(mailChan)
+
+	// this will duplicate the functionality that we do in our live application
+	// we don't want to actually send the mail in our test
+	listenForMail()
+
 	tc, err := CreateTestTemplateCache() // we don't want to call CreateTemplateCache directly
 	if err != nil {
 		log.Fatal("cannot create template cache")
@@ -70,6 +79,16 @@ func TestMain(m *testing.M) {
 	//-----------------------
 	// add os.Exit to run the test before it dies (exits)
 	os.Exit(m.Run())
+}
+
+// doing pretty much the same that we do in our live application, but we want to skip the actual seding of mail
+func listenForMail() {
+	go func() {
+		for {
+			// handle but do nothing with anything we send to the mail chnannel
+			_ = <-app.MailChan
+		}
+	}()
 }
 
 // This time we create a function that creates everything we need rather than using "TestMain" like we did in cmd/web.
