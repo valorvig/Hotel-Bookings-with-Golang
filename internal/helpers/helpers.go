@@ -1,3 +1,5 @@
+// Functions in helper can always be called from anywhere
+
 package helpers
 
 import (
@@ -26,4 +28,10 @@ func ServerError(w http.ResponseWriter, err error) { // in case something went w
 	trace := fmt.Sprintf("%s\n%s", err.Error(), debug.Stack())                                     // (1) the nature of the error itself and (2) the actual stack trace - the detailed info about the nature of the rror that took palce
 	app.ErrorLog.Println(trace)                                                                    // you may send the error via email or others instead
 	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError) // use StatusText to make it absolutely technically correct
+}
+
+// This function can be called anywhere, just access the helper to see if someoen is authenticated
+func IsAuthenticated(r *http.Request) bool {
+	exists := app.Session.Exists(r.Context(), "user_id")
+	return exists
 }

@@ -37,10 +37,19 @@ func routes(app *config.AppConfig) http.Handler {
 
 	mux.Get("/user/login", handlers.Repo.ShowLogin)
 	mux.Post("/user/login", handlers.Repo.PostShowLogin)
+	mux.Get("/user/logout", handlers.Repo.Logout)
 
 	// the img won't know how to get to the folder "/static/images/house.jpg"
 	fileServer := http.FileServer(http.Dir("./static/"))
 	mux.Handle("/static/*", http.StripPrefix("/static", fileServer)) // strip "/static" with "./static"
+
+	// everything that starts with "/admin" will be handle with this particular funciton
+	mux.Route("/admin", func(mux chi.Router) { // router stack
+		// add a middleware that will only apply to things inside this mux.Route function
+		mux.Use(Auth)
+		// only available for the authenticated user (admin). Log in first, then you can go to that page.
+		mux.Get("/dashboard", handlers.Repo.AdminDashboard)
+	})
 
 	return mux
 }

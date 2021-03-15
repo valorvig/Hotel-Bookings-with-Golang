@@ -621,8 +621,13 @@ func (m *Repository) PostShowLogin(w http.ResponseWriter, r *http.Request) {
 
 	form := forms.New(r.PostForm)
 	form.Required("email", "password")
+	form.IsEmail("email")
 	if !form.Valid() {
-		// TODO - take user back to page
+		// if things doesn't work take user back to page
+		render.Template(w, r, "login.page.tmpl", &models.TemplateData{
+			Form: form,
+		})
+		return
 	}
 
 	id, _, err := m.DB.Authenticate(email, password)
@@ -635,9 +640,24 @@ func (m *Repository) PostShowLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// successful authenticate --> log in
-	m.App.Session.Put(r.Context(), "user_id", id)
+	m.App.Session.Put(r.Context(), "user_id", id) // need to write a middleware or a helper function to determin whether or not someone is logged in
 	m.App.Session.Put(r.Context(), "flash", "logged in successfully")
 	http.Redirect(w, r, "/", http.StatusSeeOther)
+}
+
+// Logout logs a user out
+func (m *Repository) Logout(w http.ResponseWriter, r *http.Request) {
+	// to logout a user, make sure that the sessional variable user_id doesn't exist.
+	// However, in reality, this application grows, and there's too many things in the session. THe simplest thing to do is just to destroy the session
+	_ = m.App.Session.Destroy(r.Context())    // not bother to check the error (destroy gives error)
+	_ = m.App.Session.RenewToken(r.Context()) // regenerate the new token
+
+	http.Redirect(w, r, "/user/login", http.StatusSeeOther) // send them to other page otherwise the user only sees a blank page
+}
+
+// Set up some routes to pages that are only available to users who are logged in
+func (m *Repository) AdminDashboard(w http.ResponseWriter, r *http.Request) {
+	render.Template(w, r, "admin-dashboard.page.tmpl", &models.TemplateData{})
 }
 
 /*
