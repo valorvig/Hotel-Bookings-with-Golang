@@ -4,9 +4,11 @@ package dbrepo
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/valorvig/bookings/internal/models"
+	"golang.org/x/crypto/bcrypt"
 )
 
 // Create and allow the methods to be used with only postgres repository at the moment
@@ -178,4 +180,85 @@ func (m *postgresDBRepo) GetRoomByID(id int) (models.Room, error) {
 	}
 
 	return room, nil
+}
+
+func (m *postgresDBRepo) GetUserByID(id int) (models.User, error) { // model User
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	query := `select id, first_name, last_name, email, password, access_level, created_at, updated_at
+		from users where id = $1`
+
+	row := m.DB.QueryRowContext(ctx, query, id)
+
+	var u models.User
+	err := row.Scan(
+		&u.ID,
+		&u.FirstName,
+		&u.LastName,
+		&u.Email,
+		&u.Password,
+		&u.AccessLevel,
+		&u.CreatedAt,
+		&u.UpdatedAt,
+	)
+
+	if err != nil {
+		return u, err
+	}
+
+	return u, nil
+}
+
+// UpdateUser updates a user in the database
+func (m *postgresDBRepo) UpdateUser(u models.User) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	// we won't handle the password here, but will handle it in a different way
+	query := `
+		update users set first_name = $1, last_name = $2, email = $3, access_level = $4, updated_at = $5
+		`
+	// we don't care about the result, but we do care about the error
+	_, err := m.DB.ExecContext(ctx, query,
+		u.FirstName,
+		u.LastName,
+		u.Email,
+		u.AccessLevel,
+		time.Now(),
+	)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// Authenticate authenticates a user
+func (m *postgresDBRepo) Authenticate(email, testPassword string) (int, string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	var id int
+	var hashedPassword string
+
+	// find this user
+	row := m.DB.QueryRowContext(ctx, "select id, password from users where email = $1", email)
+	err := row.Scan(&id, &hashedPassword) // get the row with matched data
+	if err != nil {
+		return id, "", err
+	}
+
+	// compare what the user typed (e.g. password) against a hash in the database
+	// standard library - bcrypt
+	err = bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(testPassword))
+	if err == bcrypt.ErrMismatchedHashAndPassword {
+		return 0, "", errors.New("incorrect password")
+	} else if err != nil {
+		return 0, "", err
+	}
+
+	// we may or may not use hashedpassword
+	return id, hashedPassword, nil
 }

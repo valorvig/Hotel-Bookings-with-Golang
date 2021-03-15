@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -349,7 +350,7 @@ func (m *Repository) Availability(w http.ResponseWriter, r *http.Request) {
 // PostAvailability renders the search availability page
 func (m *Repository) PostAvailability(w http.ResponseWriter, r *http.Request) {
 	// After submitting and reload the page, the page is directed to this one
-	// (In case you don't want the page to relaodm use another approach to let it run in the background)
+	// (In case you don't want the page to relaod use another approach to let it run in the background)
 
 	start := r.Form.Get("start")
 	end := r.Form.Get("end")
@@ -595,6 +596,48 @@ func (m *Repository) BookRoom(w http.ResponseWriter, r *http.Request) {
 
 	// send the user to the make-reservation page after clicking "book now" button
 	http.Redirect(w, r, "/make-reservation", http.StatusSeeOther)
+}
+
+func (m *Repository) ShowLogin(w http.ResponseWriter, r *http.Request) {
+	render.Template(w, r, "login.page.tmpl", &models.TemplateData{
+		Form: forms.New(nil),
+	})
+}
+
+// PostShowLogin handles logging the user in
+func (m *Repository) PostShowLogin(w http.ResponseWriter, r *http.Request) {
+	// need to handle the CSRF protection in login.page.tmpl
+
+	// RenewToken is to prevent something such as session fixation attack
+	_ = m.App.Session.RenewToken(r.Context()) // renew the token every time you log in and log out
+
+	err := r.ParseForm()
+	if err != nil {
+		log.Println(err)
+	}
+
+	email := r.Form.Get("email")
+	password := r.Form.Get("password")
+
+	form := forms.New(r.PostForm)
+	form.Required("email", "password")
+	if !form.Valid() {
+		// TODO - take user back to page
+	}
+
+	id, _, err := m.DB.Authenticate(email, password)
+	if err != nil {
+		log.Println(err) // just log and keep going is not good
+
+		m.App.Session.Put(r.Context(), "error", "Invalid login credentials")
+		http.Redirect(w, r, "/user/login", http.StatusSeeOther)
+		return // return and do nothing else
+	}
+
+	// successful authenticate --> log in
+	m.App.Session.Put(r.Context(), "user_id", id)
+	m.App.Session.Put(r.Context(), "flash", "logged in successfully")
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
 /*

@@ -10,4 +10,5 @@ require (
 	github.com/jackc/pgx/v4 v4.10.1
 	github.com/justinas/nosurf v1.1.1
 	github.com/xhit/go-simple-mail/v2 v2.8.0
+	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
 )

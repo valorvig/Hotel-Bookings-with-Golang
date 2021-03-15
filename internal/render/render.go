@@ -65,7 +65,7 @@ func Template(w http.ResponseWriter, r *http.Request, tmpl string, td *models.Te
 	buf := new(bytes.Buffer)
 
 	// fill the empty template
-	td = AddDefaultData(td, r)
+	td = AddDefaultData(td, r) // [big] including CSRF token?
 
 	// store the value in buf and don't pass any data (nil)
 	err := t.Execute(buf, td) // [Big] We could have wirtten directly to "w" as well instead of having to put the data in "buf" first
