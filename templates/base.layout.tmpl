@@ -5,8 +5,8 @@
 	<html lang="en">
 		<head>
 			<!-- Required meta tags -->
-				<meta charset="utf-8"> <!--can accept other character-->
-				<meta name="viewport" content="width=device-width, initial-scale=1"> <!--don't scale and shrink tomatch other device-->
+			<meta charset="utf-8"> <!--can accept other character-->
+			<meta name="viewport" content="width=device-width, initial-scale=1"> <!--don't scale and shrink tomatch other device-->
 			
 			<title>My nice page</title>
 			
@@ -50,7 +50,16 @@
 							</li>
 							<li class="nav-item">
 								{{if eq .IsAuthenticated 1}}
-									<a class="nav-link" href="/user/logout" tabindex="-1" aria-disabled="true">Logout</a>
+									<li class="nav-item dropdown">
+										<a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+											Admin
+										</a>
+										<ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+											<li><a class="dropdown-item" href="/admin/dashboard">Dashboard</a></li>
+											<li><a class="dropdown-item" href="/user/logout">Logout</a></li>
+										</ul>
+									</li>
+									<!-- <a class="nav-link" href="/user/logout" tabindex="-1" aria-disabled="true">Logout</a> -->
 								{{else}}
 									<a class="nav-link" href="/user/login" tabindex="-1" aria-disabled="true">Login</a>
 								{{end}}
