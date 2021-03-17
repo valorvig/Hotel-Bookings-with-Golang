@@ -44,11 +44,20 @@ func routes(app *config.AppConfig) http.Handler {
 	mux.Handle("/static/*", http.StripPrefix("/static", fileServer)) // strip "/static" with "./static"
 
 	// everything that starts with "/admin" will be handle with this particular funciton
+	// put the particular pages/routes in the admin that we don't want everyone to have an access here
+	// every path inlcuded with "/admin/" will be protected with password
 	mux.Route("/admin", func(mux chi.Router) { // router stack
 		// add a middleware that will only apply to things inside this mux.Route function
-		mux.Use(Auth)
+		// **you may disable this Auth while developping the app so that you don't need to log in every time
+		// mux.Use(Auth)
+
 		// only available for the authenticated user (admin). Log in first, then you can go to that page.
 		mux.Get("/dashboard", handlers.Repo.AdminDashboard)
+
+		// Set up some routes to pages that are only available to users who are logged in
+		mux.Get("/reservations-new", handlers.Repo.AdminNewReservations)
+		mux.Get("/reservations-all", handlers.Repo.AdminAllReservations)
+		mux.Get("/reservations-calendar", handlers.Repo.AdminReservationsCalendar)
 	})
 
 	return mux

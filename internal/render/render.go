@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"path/filepath"
+	"time"
 
 	"github.com/justinas/nosurf"
 	"github.com/valorvig/bookings/internal/config"
@@ -15,7 +16,11 @@ import (
 )
 
 // map any functions and parse them to the tempalte
-var functions = template.FuncMap{}
+// specify the certain functions we want to be available to our Golang
+// Golang templates will have access to these functions
+var functions = template.FuncMap{
+	"humanDate": HumanDate,
+}
 
 var app *config.AppConfig
 var pathToTemplates = "./templates"
@@ -24,6 +29,11 @@ var pathToTemplates = "./templates"
 // func NewTemplates(a *config.AppConfig) {
 func NewRenderer(a *config.AppConfig) {
 	app = a
+}
+
+// HumanDate returns time in YYYY-MM-DD format
+func HumanDate(t time.Time) string {
+	return t.Format("2006-01-02")
 }
 
 // AddDefaultData allows what data to be available on every page
