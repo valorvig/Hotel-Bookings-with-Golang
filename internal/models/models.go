@@ -53,6 +53,7 @@ type Reservation struct {
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	Room      Room // We don't just have to put in the fields exactly as they exist in the database table
+	Processed int
 }
 
 // RoomRestriction is the room restriction model
