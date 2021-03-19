@@ -1,14 +1,15 @@
+/*
 // attention contains a js object returned from Prompt() to select which function to use
 let attention = Prompt(); // attention is {toast: toast, success: success} from Prompt's return
 
-/*
-// This should not  fire unless there's actually a date picker on that page, not on every page with the base layout
-const elem = document.getElementById("reservation-dates");
-const rangepicker = new DateRangePicker(elem, {
-  // https://mymth.github.io/vanillajs-datepicker/#/options?id=format
-  format: "yyy-mm-dd"
-});
-*/
+
+// // This should not  fire unless there's actually a date picker on that page, not on every page with the base layout
+// const elem = document.getElementById("reservation-dates");
+// const rangepicker = new DateRangePicker(elem, {
+//   // https://mymth.github.io/vanillajs-datepicker/#/options?id=format
+//   format: "yyy-mm-dd"
+// });
+
 
 // Example starter JavaScript for disabling form submissions if there are invalid fields
 (function () {
@@ -50,21 +51,7 @@ function notifyModal(title, text, icon, confirmButtonText) {
     confirmButtonText: confirmButtonText
   })
 }
-
-// display error message when the user comes to the page, using Notie
-// try visiting "/reservation-summary" directly without making the reservation to see the result
-{{with .Error}} //if you have some values in Error that's not empty
-  notify("{{.}}", "error")
-{{end}}
-
-// if success
-{{with .Flash}} 
-  notify("{{.}}", "success")
-{{end}}
-
-{{with .Warning}} 
-  notify("{{.}}", "warning")
-{{end}}
+*/
 
 // SweetAlert2
 // javascript module - avoid hard codes, edit in one place, and change everywhere
@@ -153,12 +140,15 @@ function Prompt() {
           c.willOpen(); // call willOpen (the same name in this case) from c
         }
       },
+      /*
+      // Now, this function will cause JS errors because every time we try to call a custom JS alert, a notification, etc., it will always look for elements in the model that has an id of start and id of end. 
       preConfirm: () => {
         return [
           document.getElementById('start').value,
           document.getElementById('end').value
         ]
       },
+      */
       // Popup lifecycle hook. Asynchronously runs after the popup has been shown on screen.
       didOpen: () => {
         if (c.didOpen !== undefined) {

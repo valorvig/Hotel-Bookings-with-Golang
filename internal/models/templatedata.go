@@ -12,9 +12,9 @@ type TemplateData struct {
 	FloatMap        map[string]float32
 	Data            map[string]interface{}
 	CSRFToken       string
-	Flash           string // flash message
-	Warning         string
-	Error           string
+	Flash           string      // flash message to notie
+	Warning         string      // to notie
+	Error           string      // to notie
 	Form            *forms.Form // whether a page has a form or not, the form object is available here
 	IsAuthenticated int         // >0 = logged in, 0 = not logged in
 }

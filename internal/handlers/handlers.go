@@ -732,9 +732,67 @@ func (m *Repository) AdminShowReservation(w http.ResponseWriter, r *http.Request
 	})
 }
 
+// AdminPostShowReservation
+func (m *Repository) AdminPostShowReservation(w http.ResponseWriter, r *http.Request) {
+	err := r.ParseForm() // populate r.Form
+	if err != nil {      // Here is an administrstion back end, so we don't need to concern much about the pretty error page
+		helpers.ServerError(w, err)
+		return
+	}
+
+	exploded := strings.Split(r.RequestURI, "/")
+	// [ admin reservations all 5] start with position 1 in slices
+	id, err := strconv.Atoi(exploded[4])
+	if err != nil {
+		helpers.ServerError(w, err)
+		return
+	}
+
+	src := exploded[3]
+
+	stringMap := make(map[string]string)
+	stringMap["src"] = src
+
+	// pull the model out of the database based on that id
+	res, err := m.DB.GetReservationByID(id)
+	if err != nil {
+		helpers.ServerError(w, err)
+		return
+	}
+
+	// update/overwrite the reservation's model
+	res.FirstName = r.Form.Get("first_name")
+	res.LastName = r.Form.Get("last_name")
+	res.Email = r.Form.Get("email")
+	res.Phone = r.Form.Get("phone")
+
+	// update changes to the database
+	err = m.DB.UpdateReservation(res)
+	if err != nil {
+		helpers.ServerError(w, err)
+		return
+	}
+
+	// Put a flash message via session
+	m.App.Session.Put(r.Context(), "flash", "Changes saved")
+	// bring the user back to the previous page
+	http.Redirect(w, r, fmt.Sprintf("/admin/reservations-%s", src), http.StatusSeeOther)
+
+	// we should also do an error checking in production with javascript
+}
+
 // AdminReservationsCalendar displays the reservation calendar
 func (m *Repository) AdminReservationsCalendar(w http.ResponseWriter, r *http.Request) {
 	render.Template(w, r, "admin-reservations-calendar.page.tmpl", &models.TemplateData{})
+}
+
+// AdminProcessReservation marks a reservation as processed
+func (m *Repository) AdminProcessReservation(w http.ResponseWriter, r *http.Request) {
+	id, _ := strconv.Atoi(chi.URLParam(r, "id"))
+	src := chi.URLParam(r, "src")               // get src from the url link
+	_ = m.DB.UpdateProcessForReservation(id, 1) // 1 means "mark as processed"
+	m.App.Session.Put(r.Context(), "flash", "Reservation marked as processed")
+	http.Redirect(w, r, fmt.Sprintf("/admin/reservations-%s", src), http.StatusSeeOther)
 }
 
 /*

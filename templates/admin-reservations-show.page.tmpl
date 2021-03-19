@@ -58,12 +58,30 @@
       </div>
 
       <hr>
-
       <input type="submit" class="btn btn-primary" value="save">	
-      
       <a href="/admin/reservations-{{$src}}" class="btn btn-warning">Cancel</a>
+      <a href="#!" class="btn btn-info" onclick="processRes({{$res.ID}})">Mark as Processed</a>
 
     </form>
 
   </div>
+{{end}}
+
+{{define "js"}}
+  {{$src := index .StringMap "src"}} <!-- where the user is previously from-->
+  <script>
+    function processRes(id) {
+      // use attention ("Are you sure?") to prevent the auto process after the admin has clicked to process by mistake
+      attention.custom({
+        icon: 'warning',
+        msg: 'Are you sure?',
+        // callback runs when someone click a button
+        callback: function(result) { // result from the click on the "Are you sure?" modal
+          if (result !== false) { // check if it's not the cancel button (on the "Are you sure?" modal)
+            window.location.href = "/admin/process-reservation/{{$src}}/" + id;
+          }
+        }
+      })
+    }    
+  </script>
 {{end}}
