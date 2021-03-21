@@ -7,9 +7,9 @@
 {{define "content"}}
   {{$now := index .Data "now"}}
   {{$rooms := index .Data "rooms"}}
-  {{$dim := index .IntMap "days_in_month"}}
+  {{$dim := index .IntMap "days_in_month"}} <!--a number of days in that month-->
   {{$curMonth := index .StringMap "this_month"}}
-  {{$curYear := index .StringMap "this_month_Year"}}
+  {{$curYear := index .StringMap "this_month_year"}}
 
   <div class="col-md-12">
 
@@ -33,6 +33,8 @@
 
     {{range $rooms}}
       {{$roomID := .ID}}
+      {{$blocks := index $.Data (printf "block_map_%d" .ID)}} <!-- ***use "$"" with "".Data" to refer it outside of the "range" -->
+      {{$reservations := index $.Data (printf "reservation_map_%d" .ID)}} 
 
       <h4 class="mt-4">{{.RoomName}}</h4>
 
@@ -48,9 +50,26 @@
           </tr>
 
           <tr>
-            {{range $index := iterate $dim}}
+            {{range $index := iterate $dim}} <!--index or day starting from 0-->
               <td class="text-center">
-                  <input type="checkbox">
+                {{if gt (index $reservations (printf "%s-%s-%d" $curYear $curMonth (add $index 1))) 0 }}
+                  <!-- link to our related reservation -->
+                  <a href="/admin/reservations/cal/{{index $reservations (printf "%s-%s-%d" $curYear $curMonth (add $index 1))}}">
+                    <span class="text-danger">R</span>
+                  </a>
+                {{else}}
+                  <!-- check if there is a erservation in the blocks map -->
+                  <!-- check if block ID is greater than 0, remove -->
+                  <input          
+                    {{if gt (index $blocks (printf "%s-%s-%d" $curYear $curMonth (add $index 1))) 0 }}
+                      checked
+                      name="remove_block_{{$roomID}}_{{printf "%s-%s-%d" $curYear $curMonth (add $index 1)}}"
+                      value="{{index $blocks (printf "%s-%s-%d" $curYear $curMonth (add $index 1))}}"
+                    {{else}}
+                      name="add_block_{{$roomID}}_{{printf "%s-%s-%d" $curYear $curMonth (add $index 1)}}"
+                    {{end}}
+                  type="checkbox">
+                {{end}}
               </td>
             {{end}}
           </tr>

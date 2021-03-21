@@ -59,8 +59,14 @@
 
       <hr>
       <div class="float-left">
-        <input type="submit" class="btn btn-primary" value="save">	
-        <a href="/admin/reservations-{{$src}}" class="btn btn-warning">Cancel</a>
+        <input type="submit" class="btn btn-primary" value="save">
+        {{if eq $src "cal"}}
+          <!-- take advantage of the browser history with go(-1) = go to the previous page -->
+          <!-- back to the previous page (the current month we are at), not to the calendar page -->
+          <a href="#!" onclick="window.history.go(-1)" class="brn brn-warning">Cancel</a>
+        {{else}}
+          <a href="/admin/reservations-{{$src}}" class="btn btn-warning">Cancel</a>
+        {{end}}
         <a href="#!" class="btn btn-info" onclick="processRes({{$res.ID}})">Mark as Processed</a>
       </div>
       
