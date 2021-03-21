@@ -830,7 +830,52 @@ func (m *Repository) AdminReservationsCalendar(w http.ResponseWriter, r *http.Re
 		return
 	}
 
+	// --------------------------------------------------
 	data["rooms"] = rooms
+
+	for _, x := range rooms {
+		// create maps
+		reservationMap := make(map[string]int)
+		blockMap := make(map[string]int)
+
+		// make sure that there's one entry for every single day in the current month in both the reservation map and the block map
+		for d := firstOfMonth; d.After(lastOfMonth) == false; d = d.AddDate(0, 0, 1) {
+			// 1 or 2 digit day
+			reservationMap[d.Format("2006-01-2")] = 0 // 0 = this room is available (reset every time this handler is called)
+			blockMap[d.Format("200-01-2")] = 0
+		}
+
+		// get all the restrictions for the current room
+		restrictions, err := m.DB.GetRestrictionsForRoomByDate(x.ID, firstOfMonth, lastOfMonth)
+		if err != nil {
+			helpers.ServerError(w, err)
+			return
+		}
+
+		// loop throught those restricitons and determine whether it is a reservation or a block
+		// reservation or block? reservation -> put the appropriate entry in the reservation map, block -> put the appropriate entry in the block map
+		for _, y := range restrictions {
+			if y.ReservationID > 0 { // greater than 0 means it's a reservation
+				// it's a reservation
+				for d := y.StartDate; d.After(y.EndDate) == false; d = d.AddDate(0, 0, 1) {
+					reservationMap[d.Format("2006-01-2")] = y.ReservationID
+				}
+			} else {
+				// it's a block
+				blockMap[y.StartDate.Format("2006-01-2")] = y.RestrictionID
+			}
+		}
+
+		data[fmt.Sprintf("reservation_map_%d", x.ID)] = reservationMap
+		data[fmt.Sprintf("block_map_%d", x.ID)] = blockMap
+
+		// store the block map for this room in this session
+		// one entry put in the session for every room for each block map
+		// Need to store the block map and render it before the user does anything to the reservation calendar.
+		// The post handler will pull this map out of the session and use that to compare which blocks are old (get rid of it) or new
+		// need to tell the system that we're going to store things like this (type) in the session by suding gob.Register() in the main.go file
+		m.App.Session.Put(r.Context(), fmt.Sprintf("block_map_%d", x.ID), blockMap)
+	}
 
 	render.Template(w, r, "admin-reservations-calendar.page.tmpl", &models.TemplateData{
 		StringMap: stringMap,

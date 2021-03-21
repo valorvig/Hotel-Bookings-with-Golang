@@ -83,6 +83,8 @@ $go run cmd/web/*.go
 func run() (*driver.DB, error) { // add *driver.DB and return db, so that we can use db.SQL.defer() later in main()
 	// cut and paste everything in the main() starting and above "render.NewTemplates(&app)" till the beginning
 
+	// [Big] Without registering, they are treated as interface{} types - interface types are not checked for compatibility
+	// [Big] Only types that will be transferred as implementations of interface values need to be registered
 	// what am I going to put in the session - the code with "gob" looks a bit odd
 	// We can store primitives, but we need to actually tell our application about more complex types, structures
 	// that we've defined ourselves and we want to store in the reservation model.
@@ -91,6 +93,7 @@ func run() (*driver.DB, error) { // add *driver.DB and return db, so that we can
 	gob.Register(models.User{})
 	gob.Register(models.Room{})
 	gob.Register(models.Restriction{})
+	gob.Register(map[string]int{}) // tell the app that we're going to store this type into the session, ex. blockMap := make(map[string]int)
 
 	// let's create a channel here
 	// if I put defer close() here, it's going to close as soon as this run function ends (run() only runs once at the first time)
