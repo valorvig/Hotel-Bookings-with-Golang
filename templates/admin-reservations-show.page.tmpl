@@ -63,7 +63,7 @@
         {{if eq $src "cal"}}
           <!-- take advantage of the browser history with go(-1) = go to the previous page -->
           <!-- back to the previous page (the current month we are at), not to the calendar page -->
-          <a href="#!" onclick="window.history.go(-1)" class="brn brn-warning">Cancel</a>
+          <a href="#!" onclick="window.history.go(-1)" class="btn btn-warning">Cancel</a>
         {{else}}
           <a href="/admin/reservations-{{$src}}" class="btn btn-warning">Cancel</a>
         {{end}}

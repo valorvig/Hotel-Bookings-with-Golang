@@ -831,6 +831,11 @@ func (m *Repository) AdminReservationsCalendar(w http.ResponseWriter, r *http.Re
 	}
 
 	// --------------------------------------------------
+	/*
+		Ex. 2*31 = 62 dates to check and two fucntion calls on each of those dates
+		Hence, use data structure or map instead of direct queries to the database, which is more efficient
+	*/
+
 	data["rooms"] = rooms
 
 	for _, x := range rooms {
@@ -845,7 +850,7 @@ func (m *Repository) AdminReservationsCalendar(w http.ResponseWriter, r *http.Re
 			blockMap[d.Format("200-01-2")] = 0
 		}
 
-		// get all the restrictions for the current room
+		// get all the restrictions for the current room (***restrictions is of type []models.RoomRestriction)
 		restrictions, err := m.DB.GetRestrictionsForRoomByDate(x.ID, firstOfMonth, lastOfMonth)
 		if err != nil {
 			helpers.ServerError(w, err)
@@ -862,7 +867,7 @@ func (m *Repository) AdminReservationsCalendar(w http.ResponseWriter, r *http.Re
 				}
 			} else {
 				// it's a block
-				blockMap[y.StartDate.Format("2006-01-2")] = y.RestrictionID // store ID
+				blockMap[y.StartDate.Format("2006-01-2")] = y.RestrictionID // store restriciton ID which should be > 0
 			}
 		}
 
@@ -900,6 +905,65 @@ func (m *Repository) AdminDeleteReservation(w http.ResponseWriter, r *http.Reque
 	_ = m.DB.DeleteReservation(id) // 1 means "mark as processed"
 	m.App.Session.Put(r.Context(), "flash", "Reservation deleted")
 	http.Redirect(w, r, fmt.Sprintf("/admin/reservations-%s", src), http.StatusSeeOther)
+}
+
+// AdminPostReservationsCalendar handles post of reservation calendar
+func (m *Repository) AdminPostReservationsCalendar(w http.ResponseWriter, r *http.Request) {
+	// log.Println("Works")
+	err := r.ParseForm()
+	if err != nil {
+		helpers.ServerError(w, err)
+		return
+	}
+
+	// Ignore the error because it's a hidden field that I know is there
+	year, _ := strconv.Atoi(r.Form.Get("y"))
+	month, _ := strconv.Atoi(r.Form.Get("m"))
+
+	// process blocks
+	rooms, err := m.DB.AllRooms()
+	if err != nil {
+		helpers.ServerError(w, err)
+		return
+	}
+
+	form := forms.New(r.PostForm)
+
+	for _, x := range rooms {
+		// Get the block map from the session - at the point where the calendar was displayed without changes from users
+		// Loop through entire map if we have an entry in the map that doesn't exist in our posted data,
+		// and if the restriction ud >, then it is a block we need to remove
+		// If we uncheck the block, it leaves the form but still exist in the block map
+		curMap := m.App.Session.Get(r.Context(), fmt.Sprintf("block_map_%d", x.ID)).(map[string]int)
+		for name, value := range curMap {
+			// ok will be false if the value is not in the map
+			if val, ok := curMap[name]; ok {
+				// only pay attention to value > 0 (they are actual blocks), and that are not in the form post (= they've been unchecked)
+				// the rest are just placeholders for days without blocks
+				if val > 0 { // then it's an actual block
+					if !form.Has(fmt.Sprintf("remove_block_%d_%s", x.ID, name)) { // it used to be checked, but now it's unchecked
+						// delete the restriction by id
+						log.Println("would delete block", value)
+					}
+				}
+			}
+		}
+	}
+
+	// now handle new blocks - dd block
+	for name, _ := range r.PostForm { // go through every single entry in the post form
+		// log.Println("form has name", name) // test run
+		// only focus on the names with prefixes (the checked ones/ the unchecked won't make them to the post form)
+		if strings.HasPrefix(name, "add_block") { // Ex. add_block_1_2020-12-14
+			exploded := strings.Split(name, "_")
+			roomID, _ := strconv.Atoi(exploded[2])
+			// insert a new block
+			log.Println("Would insertblock for room id", roomID, "for date", exploded[3]) // test run
+		}
+	}
+
+	m.App.Session.Put(r.Context(), "flash", "Changes saved") // only save into the session for now
+	http.Redirect(w, r, fmt.Sprintf("/admin/reservations-calendar?y=%d&m=%d", year, month), http.StatusSeeOther)
 }
 
 /*
