@@ -697,11 +697,11 @@ func (m *Repository) AdminNewReservations(w http.ResponseWriter, r *http.Request
 
 // AdminShowReservation show the reservation in the admin tool
 func (m *Repository) AdminShowReservation(w http.ResponseWriter, r *http.Request) {
-	// url format - "/admin/reservations/all/1"
+	// url format - "/admin/reservations/all/1" - position 1,2,3,4 (not starting from 4)
 	// get the url and split or explode it on "/"
-	exploded := strings.Split(r.RequestURI, "/")
+	exploded := strings.Split(r.RequestURI, "/") // Ex. sometimes it's "/admin/reservations/cal/9?=2021&m=03" -- change to --> "/admin/reservations/cal/9/show?=2021&m=03" to get the id after using explode
 	// log.Println(exploded) // [ admin reservations all 5]
-	id, err := strconv.Atoi(exploded[4]) // 4th position is the id (you count from position 1 in slices)
+	id, err := strconv.Atoi(exploded[4]) // the 4th position can also be "9?=2021&m=03" not only the id alone --> so, need to add "/show" in the route and calendar page
 	if err != nil {
 		helpers.ServerError(w, err)
 		return
@@ -713,6 +713,15 @@ func (m *Repository) AdminShowReservation(w http.ResponseWriter, r *http.Request
 
 	stringMap := make(map[string]string)
 	stringMap["src"] = src
+
+	// getting values from the url "http://localhost:8080/admin/reservations/cal/4/show?y=2021&m=03" after clicking the R from the calendar page
+	year := r.URL.Query().Get("y")
+	month := r.URL.Query().Get("m")
+
+	// has value: from calendar to show page - http://localhost:8080/admin/reservations/cal/10/show?y=2021&m=03
+	// no value: from all/new to show page - http://localhost:8080/admin/reservations/all/10/show
+	stringMap["month"] = month
+	stringMap["year"] = year
 
 	// get reservation from the database
 	res, err := m.DB.GetReservationByID(id)
@@ -773,10 +782,21 @@ func (m *Repository) AdminPostShowReservation(w http.ResponseWriter, r *http.Req
 		return
 	}
 
+	// get month and year from the hiiden input from the post form
+	month := r.Form.Get("month")
+	year := r.Form.Get("year")
+
 	// Put a flash message via session
 	m.App.Session.Put(r.Context(), "flash", "Changes saved")
-	// bring the user back to the previous page
-	http.Redirect(w, r, fmt.Sprintf("/admin/reservations-%s", src), http.StatusSeeOther)
+
+	// check whether the year and the month we obtain from the post form are filled or empty
+	// try "Save changes" on calendar-to-show page and new-to-show page
+	if year == "" {
+		// bring the user back to the previous page
+		http.Redirect(w, r, fmt.Sprintf("/admin/reservations-%s", src), http.StatusSeeOther)
+	} else {
+		http.Redirect(w, r, fmt.Sprintf("/admin/reservations-calendar?y=%s&m=%s", year, month), http.StatusSeeOther)
+	}
 
 	// we should also do an error checking in production with javascript
 }
@@ -891,11 +911,25 @@ func (m *Repository) AdminReservationsCalendar(w http.ResponseWriter, r *http.Re
 
 // AdminProcessReservation marks a reservation as processed
 func (m *Repository) AdminProcessReservation(w http.ResponseWriter, r *http.Request) {
-	id, _ := strconv.Atoi(chi.URLParam(r, "id"))
-	src := chi.URLParam(r, "src")               // get src from the url link
-	_ = m.DB.UpdateProcessForReservation(id, 1) // 1 means "mark as processed"
+	id, _ := strconv.Atoi(chi.URLParam(r, "id"))   // getting the id with chi library should be the same as using "strings.Split(r.RequestURI, "/")" and "explode" in AdminShowReservation
+	src := chi.URLParam(r, "src")                  // get src from the url link
+	err := m.DB.UpdateProcessForReservation(id, 1) // 1 means "mark as processed"
+	if err != nil {
+		log.Println(err)
+	}
+
+	year := r.URL.Query().Get("y")
+	month := r.URL.Query().Get("m")
+
 	m.App.Session.Put(r.Context(), "flash", "Reservation marked as processed")
-	http.Redirect(w, r, fmt.Sprintf("/admin/reservations-%s", src), http.StatusSeeOther)
+
+	if year == "" {
+		// [Big] #{src} not seem to work - http.Redirect(w, r, fmt.Sprintf("/admin/reservations-#{src}"), http.StatusSeeOther)
+		http.Redirect(w, r, fmt.Sprintf("/admin/reservations-%s", src), http.StatusSeeOther)
+	} else {
+		http.Redirect(w, r, fmt.Sprintf("/admin/reservations-calendar?y=%s&m=%s", year, month), http.StatusSeeOther)
+	}
+
 }
 
 // AdminDeleteReservation deletes a reservation
@@ -903,8 +937,17 @@ func (m *Repository) AdminDeleteReservation(w http.ResponseWriter, r *http.Reque
 	id, _ := strconv.Atoi(chi.URLParam(r, "id"))
 	src := chi.URLParam(r, "src")  // get src from the url link
 	_ = m.DB.DeleteReservation(id) // 1 means "mark as processed"
+
+	year := r.URL.Query().Get("y")
+	month := r.URL.Query().Get("m")
+
 	m.App.Session.Put(r.Context(), "flash", "Reservation deleted")
-	http.Redirect(w, r, fmt.Sprintf("/admin/reservations-%s", src), http.StatusSeeOther)
+
+	if year == "" {
+		http.Redirect(w, r, fmt.Sprintf("/admin/reservations-%s", src), http.StatusSeeOther)
+	} else {
+		http.Redirect(w, r, fmt.Sprintf("/admin/reservations-calendar?y=%s&m=%s", year, month), http.StatusSeeOther)
+	}
 }
 
 // AdminPostReservationsCalendar handles post of reservation calendar
@@ -943,7 +986,11 @@ func (m *Repository) AdminPostReservationsCalendar(w http.ResponseWriter, r *htt
 				if val > 0 { // then it's an actual block
 					if !form.Has(fmt.Sprintf("remove_block_%d_%s", x.ID, name)) { // it used to be checked, but now it's unchecked
 						// delete the restriction by id
-						log.Println("would delete block", value)
+						// log.Println("would delete block", value)
+						err := m.DB.DeleteBlockByID(value)
+						if err != nil {
+							log.Println(err)
+						}
 					}
 				}
 			}
@@ -957,8 +1004,13 @@ func (m *Repository) AdminPostReservationsCalendar(w http.ResponseWriter, r *htt
 		if strings.HasPrefix(name, "add_block") { // Ex. add_block_1_2020-12-14
 			exploded := strings.Split(name, "_")
 			roomID, _ := strconv.Atoi(exploded[2])
+			t, _ := time.Parse("2006-01-2", exploded[3])
 			// insert a new block
-			log.Println("Would insertblock for room id", roomID, "for date", exploded[3]) // test run
+			// log.Println("Would insertblock for room id", roomID, "for date", exploded[3]) // test run
+			err := m.DB.InsertBlockForRoom(roomID, t)
+			if err != nil {
+				log.Println(err)
+			}
 		}
 	}
 
