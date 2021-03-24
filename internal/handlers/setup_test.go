@@ -25,14 +25,24 @@ import (
 var app config.AppConfig
 var session *scs.SessionManager
 var pathToTemplates = "./../../templates"
-var functions = template.FuncMap{} // put this as the same one as from render.go to avoid error
+var functions = template.FuncMap{ // var functions = template.FuncMap{} // put this as the same one as from render.go to avoid error
+	"humanDate":  render.HumanDate,
+	"formatDate": render.FormatDate,
+	"iterate":    render.Iterate,
+	"add":        render.Add,
+}
 
 // we won't just use getRoutes, but we'll take advantage of the test_main that we used in our other tests
 // TestMain is part of the testing package in the standarad library
 func TestMain(m *testing.M) {
 	// Cut from getRoutes (that is laso from main.go)
 
-	gob.Register(models.Reservation{}) // register the models.Reservation to the session, so we know that we can use that in the session
+	// register the models.Reservation to the session, so we know that we can use that in the session
+	gob.Register(models.Reservation{})
+	gob.Register(models.User{})
+	gob.Register(models.Room{})
+	gob.Register(models.Restriction{})
+	gob.Register(map[string]int{})
 
 	// change this to true when in production
 	app.InProduction = false
@@ -161,6 +171,24 @@ func getRoutes() http.Handler {
 	mux.Get("/make-reservation", Repo.Reservation)
 	mux.Post("/make-reservation", Repo.PostReservation)
 	mux.Get("/reservation-summary", Repo.ReservationSummary)
+
+	// copy all the actual routes that don't exist herr yet and paste them here, then remove the "handlers." part
+
+	mux.Get("/user/login", Repo.ShowLogin)
+	mux.Post("/user/login", Repo.PostShowLogin)
+	mux.Get("/user/logout", Repo.Logout)
+
+	// don't need to be wrapped (in /admin routes) because we're just testing the handlers not the authentication
+	// however, need to add the "/admin/" prefix for these routes
+	mux.Get("/admin/dashboard", Repo.AdminDashboard)
+	mux.Get("/admin/reservations-new", Repo.AdminNewReservations)
+	mux.Get("/admin/reservations-all", Repo.AdminAllReservations)
+	mux.Get("/admin/reservations-calendar", Repo.AdminReservationsCalendar)
+	mux.Post("/admin/reservations-calendar", Repo.AdminPostReservationsCalendar)
+	mux.Get("/admin/process-reservation/{src}/{id}/do", Repo.AdminProcessReservation) // the same problem occur so we need to add "do" like "show"
+	mux.Get("/admin/delete-reservation/{src}/{id}/do", Repo.AdminDeleteReservation)
+	mux.Get("/admin/reservations/{src}/{id}/show", Repo.AdminShowReservation)
+	mux.Post("/admin/reservations/{src}/{id}", Repo.AdminPostShowReservation)
 
 	// the img won't know how to get to the folder "/static/images/house.jpg"
 	fileServer := http.FileServer(http.Dir("./static/"))

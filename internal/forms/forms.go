@@ -15,7 +15,7 @@ type Form struct {
 	Errors errors
 }
 
-// Valid turns true if there are no errors, otherwise flase
+// Valid turns true if there are no errors, otherwise false
 func (f *Form) Valid() bool {
 	return len(f.Errors) == 0
 }

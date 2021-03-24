@@ -80,7 +80,7 @@ func TestForm_MinLength(t *testing.T) {
 		t.Error("should have an error, but did not get one")
 	}
 
-	// may try running tset first before going further-----------------
+	// may try running test first before going further-----------------
 
 	// checking fail case
 	postedValues := url.Values{}

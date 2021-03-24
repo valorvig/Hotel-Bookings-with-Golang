@@ -105,14 +105,14 @@ func (m *Repository) Reservation(w http.ResponseWriter, r *http.Request) {
 
 		// use more useful error
 		m.App.Session.Put(r.Context(), "error", "can't get reservation from session") // might not be useful for users but for exercise
-		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)                        // redirect to the home page
+		http.Redirect(w, r, "/", http.StatusSeeOther)                                 // redirect to the home page
 		return                                                                        // don't want anything else to work after this
 	}
 
 	room, err := m.DB.GetRoomByID(res.RoomID) // return the whole model of that room
 	if err != nil {
 		m.App.Session.Put(r.Context(), "error", "can't find room!")
-		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
 
@@ -147,7 +147,7 @@ func (m *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
 			// helpers.ServerError(w, errors.New("can't get from session"))
 
 			m.App.Session.Put(r.Context(), "error", "can't parse form") // might not be useful for users but for exercise
-			http.Redirect(w, r, "/", http.StatusTemporaryRedirect)      // redirect to the home page
+			http.Redirect(w, r, "/", http.StatusSeeOther)      // redirect to the home page
 
 			return
 		}
@@ -161,7 +161,7 @@ func (m *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
 		// helpers.ServerError(w, err)
 
 		m.App.Session.Put(r.Context(), "error", "can't parse form") // might not be useful for users but for exercise
-		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)      // redirect to the home page
+		http.Redirect(w, r, "/", http.StatusSeeOther)               // redirect to the home page
 
 		return
 	}
@@ -182,7 +182,7 @@ func (m *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
 		// Never trust the user's input eventhough we also have date picker to check the correct format
 		// So we're going to test this as well
 		m.App.Session.Put(r.Context(), "error", "can't parse start date") // meaningful error
-		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
 
@@ -192,7 +192,7 @@ func (m *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
 		// helpers.ServerError(w, err)
 
 		m.App.Session.Put(r.Context(), "error", "can't parse end date")
-		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+		http.Redirect(w, r, "/", http.StatusSeeOther)
 
 		return // (1) return to stop execution
 	}
@@ -203,7 +203,7 @@ func (m *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
 		// helpers.ServerError(w, err)
 
 		m.App.Session.Put(r.Context(), "error", "invalid data!")
-		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+		http.Redirect(w, r, "/", http.StatusSeeOther)
 
 		return // (2) return to stop execution
 	}
@@ -216,6 +216,14 @@ func (m *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
 		reservation.Email = r.Form.Get("email")
 	*/
 
+	// fix the bug where the room won't appear on the make-reservation page
+	room, err := m.DB.GetRoomByID(roomID)
+	if err != nil {
+		m.App.Session.Put(r.Context(), "error", "invalid data for room!")
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
+
 	// We have to prevent users from losing all filled info after getting an error
 	// So we need to indicate the error and where to fix it to the users
 	// create "reservation" to reserve user's input data and prevent them from losing afterwards
@@ -227,6 +235,7 @@ func (m *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
 		StartDate: startDate,
 		EndDate:   endDate,
 		RoomID:    roomID,
+		Room:      room,
 	}
 
 	// create a form with value
@@ -259,7 +268,7 @@ func (m *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
 		// helpers.ServerError(w, err)
 
 		m.App.Session.Put(r.Context(), "error", "can't insert reservation into database!")
-		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+		http.Redirect(w, r, "/", http.StatusSeeOther)
 
 		return // (3) ***without return, it will still run, but won't stop execution at this point, and it will fail when it reach to the database insert part
 	}
@@ -284,7 +293,7 @@ func (m *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
 		// helpers.ServerError(w, err)
 
 		m.App.Session.Put(r.Context(), "error", "can't insert room restriction!")
-		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+		http.Redirect(w, r, "/", http.StatusSeeOther)
 
 		return
 	}
@@ -523,8 +532,8 @@ func (m *Repository) ReservationSummary(w http.ResponseWriter, r *http.Request) 
 		// log.Println("cannot get item from session")
 		m.App.ErrorLog.Println("Can't get error from session")
 		m.App.Session.Put(r.Context(), "error", "Can't get reservation from session")
-		http.Redirect(w, r, "/", http.StatusTemporaryRedirect) // use 300 because maybe they're going to make a reservation, or they'll come back later.
-		return                                                 // we don't want to go further and display with a blank screen.
+		http.Redirect(w, r, "/", http.StatusSeeOther) // use 300 because maybe they're going to make a reservation, or they'll come back later.
+		return                                        // we don't want to go further and display with a blank screen.
 		// try typing "/reservation-summary" directly to see the result
 	}
 

@@ -237,7 +237,13 @@ func (m *testDBRepo) UpdateUser(u models.User) error {
 }
 
 func (m *testDBRepo) Authenticate(email, testPasword string) (int, string, error) {
-	return 1, "", nil
+	// mocking what happens at the database level
+	// the test email with allowed authentication
+	if email == "me@here.ca" {
+		return 1, "", nil
+	}
+
+	return 0, "", errors.New("invalid login, not authenticated")
 }
 
 // AllReservations returns a slice of all reservations

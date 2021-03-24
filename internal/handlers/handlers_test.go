@@ -8,9 +8,11 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"reflect"
 	"strings"
 	"testing"
 
+	"github.com/valorvig/bookings/internal/driver"
 	"github.com/valorvig/bookings/internal/models"
 )
 
@@ -41,6 +43,14 @@ var theTests = []struct {
 	{"sa", "/search-availability", "GET" /*[]postData{},*/, http.StatusOK},
 	{"contact", "/search-availability", "GET" /*[]postData{},*/, http.StatusOK},
 	{"ms", "/make-reservation", "GET" /*[]postData{},*/, http.StatusOK},
+	{"non-existent", "/green/eggs/and/ham", "GET", http.StatusNotFound},
+	// new routes
+	{"login", "/user/login", "GET", http.StatusOK},
+	{"logout", "/user/logout", "GET", http.StatusOK},
+	{"dashboard", "/admin/dashboard", "GET", http.StatusOK},
+	{"new res", "/admin/reservations-new", "GET", http.StatusOK},
+	{"all res", "/admin/reservations-all", "GET", http.StatusOK},
+	{"show res", "/admin/reservations/new/1/show", "GET", http.StatusOK},
 
 	/* POST */
 	// {"post-search-avail", "/search-availability", "POST", []postData{
@@ -150,7 +160,7 @@ func TestRepository_Reservation(t *testing.T) {
 	rr = httptest.NewRecorder()
 
 	handler.ServeHTTP(rr, req)
-	if rr.Code != http.StatusTemporaryRedirect { // use StatusTemporaryRedirect because we expects to find that
+	if rr.Code != http.StatusSeeOther { // use StatusSeeOther because we expects to find that
 		t.Errorf("Rservation handler returned wrong response code: %d, wanted %d", rr.Code, http.StatusOK)
 	}
 
@@ -163,7 +173,7 @@ func TestRepository_Reservation(t *testing.T) {
 	session.Put(ctx, "reservation", reservation)
 
 	handler.ServeHTTP(rr, req)
-	if rr.Code != http.StatusTemporaryRedirect { // use StatusTemporaryRedirect because we expects to find that
+	if rr.Code != http.StatusSeeOther { // use StatusSeeOther because we expects to find that
 		t.Errorf("Reservation handler returned wrong response code: %d, wanted %d", rr.Code, http.StatusOK)
 	}
 
@@ -219,7 +229,7 @@ func TestRepository_PostReservation(t *testing.T) {
 
 	handler.ServeHTTP(rr, req) // pass something (no need to be ReposeWriter) that satisfies the requirements for being a response writer
 
-	if rr.Code != http.StatusTemporaryRedirect { // we expect to see StatusTemporaryRedirect
+	if rr.Code != http.StatusSeeOther { // we expect to see StatusSeeOther
 		t.Errorf("PostReservation handler returned wrong response code for missing post body")
 	}
 
@@ -243,7 +253,7 @@ func TestRepository_PostReservation(t *testing.T) {
 
 	handler.ServeHTTP(rr, req) // pass something (no need to be ReposeWriter) that satisfies the requirements for being a response writer
 
-	if rr.Code != http.StatusTemporaryRedirect { // we expect to see StatusTemporaryRedirect according to start_date check from PostReservation
+	if rr.Code != http.StatusSeeOther { // we expect to see StatusSeeOther according to start_date check from PostReservation
 		t.Errorf("PostReservation handler returned wrong response code for invalid start date: %d, wanted %d", rr.Code, http.StatusOK)
 	}
 
@@ -267,7 +277,7 @@ func TestRepository_PostReservation(t *testing.T) {
 
 	handler.ServeHTTP(rr, req)
 
-	if rr.Code != http.StatusTemporaryRedirect { // we expect to see StatusTemporaryRedirect according to start_date check from PostReservation
+	if rr.Code != http.StatusSeeOther { // we expect to see StatusSeeOther according to start_date check from PostReservation
 		t.Errorf("PostReservation handler returned wrong response code for invalid end date: %d, wanted %d", rr.Code, http.StatusOK)
 	}
 
@@ -291,7 +301,7 @@ func TestRepository_PostReservation(t *testing.T) {
 
 	handler.ServeHTTP(rr, req)
 
-	if rr.Code != http.StatusTemporaryRedirect {
+	if rr.Code != http.StatusSeeOther {
 		t.Errorf("PostReservation handler returned wrong response code for invalid room id: %d, wanted %d", rr.Code, http.StatusOK)
 	}
 
@@ -339,8 +349,8 @@ func TestRepository_PostReservation(t *testing.T) {
 
 	handler.ServeHTTP(rr, req)
 
-	if rr.Code != http.StatusTemporaryRedirect { // status have to match the error defined in PostReservation
-		t.Errorf("PostReservation handler failed when trying to fail inserting reservation: %d, wanted %d", rr.Code, http.StatusTemporaryRedirect) // not the best comment, but you get the idea
+	if rr.Code != http.StatusSeeOther { // status have to match the error defined in PostReservation
+		t.Errorf("PostReservation handler failed when trying to fail inserting reservation: %d, wanted %d", rr.Code, http.StatusSeeOther) // not the best comment, but you get the idea
 	}
 
 	// test for failure to insert restriction into database
@@ -363,10 +373,55 @@ func TestRepository_PostReservation(t *testing.T) {
 
 	handler.ServeHTTP(rr, req)
 
-	if rr.Code != http.StatusTemporaryRedirect { // check from handlers.go --> http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
-		t.Errorf("PostReservation handler failed when trying to fail inserting reservation: %d, wanted %d", rr.Code, http.StatusTemporaryRedirect) // not the best comment, but you get the idea
+	if rr.Code != http.StatusSeeOther { // check from handlers.go --> http.Redirect(w, r, "/", http.StatusSeeOther)
+		t.Errorf("PostReservation handler failed when trying to fail inserting reservation: %d, wanted %d", rr.Code, http.StatusSeeOther) // not the best comment, but you get the idea
 	}
 }
+
+func TestNewRepo(t *testing.T) {
+	var db driver.DB
+	testRepo := NewRepo(&app, &db)
+
+	if reflect.TypeOf(testRepo).String() != "*handlers.Repository" {
+		t.Errorf("Did not get correct type from NewRepo: got %s, wanted *Repository", reflect.TypeOf(testRepo).String())
+	}
+}
+
+// func TestRepository_PostAvailability(t *testing.T) {
+// 	/*****************************************
+// 	// first case -- rooms are not available
+// 	*****************************************/
+// 	// create our request body
+// 	postedData := url.Values{}
+// 	postedData.Add("start", "2050-01-01")
+// 	postedData.Add("end", "2050-01-02")
+
+// 	// create our request
+// 	req, _ := http.NewRequest("POST", "/search-availability", strings.NewReader(postedData.Encode()))
+
+// 	// get the context with session
+// 	ctx := getCtx(req)
+// 	req = req.WithContext(ctx)
+
+// 	// set the request header
+// 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+// 	// create our response recorder, which satisfies the requirements
+// 	// for http.ResponseWriter
+// 	rr := httptest.NewRecorder()
+
+// 	// make our handler a http.HandlerFunc
+// 	handler := http.HandlerFunc(Repo.PostAvailability)
+
+// 	// make the request to our handler
+// 	handler.ServeHTTP(rr, req)
+
+// 	// since we have no rooms available, we expect to get status http.StatusSeeOther
+// 	if rr.Code != http.StatusSeeOther {
+// 		t.Errorf("Post availability when no rooms available gave wrong status code: got %d, wanted %d", rr.Code, http.StatusSeeOther)
+// 	}
+
+// }
 
 func TestRepository_AvailabilityJSON(t *testing.T) {
 	// first case - rooms are not available
@@ -398,6 +453,83 @@ func TestRepository_AvailabilityJSON(t *testing.T) {
 	err := json.Unmarshal([]byte(rr.Body.String()), &j) // rr send back to us by the server, convert and put it into j
 	if err != nil {
 		t.Error("failed to parse json")
+	}
+}
+
+// table driven test - 1) everything is valid, 2) login credentials are invalid, 3) enter incorrect information
+var loginTests = []struct {
+	name               string
+	email              string
+	expectedStatusCode int
+	expectedHTML       string // pull HTML out of the response and look for things that should be in there
+	expectedLocation   string // what URL the users have in their browser
+}{
+	{
+		"valid-credentials", // name of how this test is called
+		"me@here.ca",
+		http.StatusSeeOther, // used by the redirecrt
+		"",                  // empty because redirect directs to the browser not HTML
+		"/",                 // take to the homepage after login successfully
+	},
+	{ // if users type the wrong info, we redirect them to the login page
+		"invalid-credentials",
+		"jack@nimble.com",
+		http.StatusSeeOther,
+		"",
+		"/user/login",
+	},
+	{ // the user didn't enter all the info in the correct format - assume it's the email in this case
+		"invalid-data",
+		"j",                    // invalid email
+		http.StatusOK,          // we render the login form all over agina in this case, so we're not doing a redirect
+		`action="/user/login"`, // something that is going to be in the login screen, as a part of the form. `action="/user/login"`, a html sending back to the user that equals user log in. (`action="/user/login"` only appear on login.page.tmpl - that's a valid thing to look for) (try action="/user/login"` and it would fail)
+		"",                     // no redirect in this case, we're just getting some html
+	},
+}
+
+func TestLogin(t *testing.T) {
+	// table test - range theough all tests
+	for _, e := range loginTests {
+		postedData := url.Values{} // create an empty value for storing data
+		postedData.Add("email", e.email)
+		postedData.Add("password", "password")
+
+		// create request
+		req, _ := http.NewRequest("POST", "/user/login", strings.NewReader(postedData.Encode()))
+		ctx := getCtx(req)
+		req = req.WithContext(ctx)
+
+		// set header - don't ahve to do but it's a good practice
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		// response recorder
+		rr := httptest.NewRecorder()
+
+		// call the handler
+		handler := http.HandlerFunc(Repo.PostShowLogin)
+		handler.ServeHTTP(rr, req)
+
+		if rr.Code != e.expectedStatusCode {
+			t.Errorf("failed %s: expected code %d, but got %d", e.name, e.expectedStatusCode, rr.Code)
+		}
+
+		// if someone logs in successfully, they should be redirected to the home page
+		// check the location
+		if e.expectedLocation != "" {
+			// get the URL from test
+			actualLoc, _ := rr.Result().Location()
+			if actualLoc.String() != e.expectedLocation {
+				t.Errorf("failed %s: expected location %s, but got %s", e.name, e.expectedLocation, actualLoc.String())
+			}
+		}
+
+		// checking for expected values in HTML
+		if e.expectedHTML != "" {
+			// read the response body into a string
+			html := rr.Body.String()
+			if !strings.Contains(html, e.expectedHTML) {
+				t.Errorf("failed %s: expected to find %s, but did not", e.name, e.expectedHTML)
+			}
+		}
 	}
 }
 
