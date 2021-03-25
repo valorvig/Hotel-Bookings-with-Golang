@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/gob"
+	"flag"
 	"fmt"
 	"log"
 	"net/http"
@@ -95,6 +96,26 @@ func run() (*driver.DB, error) { // add *driver.DB and return db, so that we can
 	gob.Register(models.Restriction{})
 	gob.Register(map[string]int{}) // tell the app that we're going to store this type into the session, ex. blockMap := make(map[string]int)
 
+	// prevent from hard coding the values and recompiling the app
+	// read flags (comman line flag - read the value from the command line instead of the need to directly change the value in this file and recompile the whole applicaiton )
+	// these values exist as pointers
+	inProduction := flag.Bool("production", true, "Application is in production") // set the default to true which is always safe since you don't want to accidentally set something into development mode on a live server
+	useCache := flag.Bool("cache", true, "Use template cache")
+	dbHost := flag.String("dbhost", "localhost", "Database host") // sometimes you don't have hte database on the same machine as your application server (In producution, you rarely have the database on the same server as your web app - different hosts)
+	dbName := flag.String("dbname", "", "Database name")
+	dbUser := flag.String("dbuser", "", "Database user")
+	dbPass := flag.String("dbpass", "", "Database password")
+	dbPort := flag.String("dbport", "5432", "Database port")
+	dbSSL := flag.String("dbssl", "disable", "Database ssl settings (disable, prefer, require)") // disable: deafult, prefer: use SSL certificate if it exists, require: don't start if you don't have an SSL certificate on the database server
+
+	// parse the values before they are usable
+	flag.Parse()
+
+	if *dbName == "" || *dbUser == "" {
+		fmt.Println("Missing required flags")
+		os.Exit(1) // stop the application
+	}
+
 	// let's create a channel here
 	// if I put defer close() here, it's going to close as soon as this run function ends (run() only runs once at the first time)
 	// So we won't close it here but the palce after run() is called
@@ -102,7 +123,11 @@ func run() (*driver.DB, error) { // add *driver.DB and return db, so that we can
 	app.MailChan = mailChan
 
 	// change this to true when in production
-	app.InProduction = false // change one place but affect everywhere
+	// app.InProduction = false // change one place but affect everywhere
+	// we can just change this to true, but we don't want to do that because we don't want to recompile the applicaiton - need 2 version for development and production
+	app.InProduction = *inProduction
+	// app.UseCache = false
+	app.UseCache = *useCache
 
 	infoLog = log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime) // Ldate & Ltime are the local date and local time
 	app.InfoLog = infoLog
@@ -125,8 +150,10 @@ func run() (*driver.DB, error) { // add *driver.DB and return db, so that we can
 
 	// connect to database
 	log.Println("Connecting to database...")
+	connectionString := fmt.Sprintf("host=%s port=%s dbname=%s user=%s password=%s sslmode=%s", *dbHost, *dbPort, *dbName, *dbUser, *dbPass, *dbSSL)
 	// we're going to use hard coding for the meantime
-	db, err := driver.ConnectSQL("host=localhost port=5432 dbname=bookings user=postgres password=1234")
+	// db, err := driver.ConnectSQL("host=localhost port=5432 dbname=bookings user=postgres password=1234") // avoid hard coding
+	db, err := driver.ConnectSQL(connectionString)
 	if err != nil {
 		log.Fatal("Cannot connect to database! Dying...")
 	}
@@ -140,7 +167,6 @@ func run() (*driver.DB, error) { // add *driver.DB and return db, so that we can
 	}
 
 	app.TemplateCache = tc
-	app.UseCache = false
 
 	// transfer main app and repo to other files
 	// We can create a new instance, a new MySQL function. This is a reposaitory for a handler - holds a repository that's of type for Postgres, MySQL, Oracle, MongoDB, etc.
