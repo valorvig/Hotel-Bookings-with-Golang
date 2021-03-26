@@ -1,6 +1,7 @@
+
 .my-footer {
-  height: 5em;
-  background: #0c699e;
+  /* height: 9em; */
+  background: #00529c;
   margin-top: 1.5em; /*the width of a capital letter M, 1em = base size of a chracter*/
   padding: 1em;
   color: #ffffff;
